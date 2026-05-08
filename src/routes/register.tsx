@@ -344,19 +344,22 @@ function SuccessView({ data, bank }: { data: SuccessData; bank: BankInfo }) {
             </div>
 
             {isPayNow ? (
-              <div className="rounded-lg border-2 border-gold bg-gold/5 p-4">
-                <p className="font-semibold text-primary">Bank transfer details</p>
-                <div className="mt-3 grid gap-1 text-sm">
-                  <BankRow label="Bank" value={bank.bank_name} />
-                  <BankRow label="Account name" value={bank.account_name} />
-                  <BankRow label="Account number" value={bank.account_number} />
-                  <BankRow label="Amount" value={formatNGN(totalAmount)} />
-                  <BankRow label="Reference" value={reference} />
+              <>
+                <div className="rounded-lg border-2 border-gold bg-gold/5 p-4">
+                  <p className="font-semibold text-primary">Bank transfer details</p>
+                  <div className="mt-3 grid gap-1 text-sm">
+                    <BankRow label="Bank" value={bank.bank_name} />
+                    <BankRow label="Account name" value={bank.account_name} />
+                    <BankRow label="Account number" value={bank.account_number} />
+                    <BankRow label="Amount" value={formatNGN(totalAmount)} />
+                    <BankRow label="Reference" value={reference} />
+                  </div>
+                  <p className="mt-3 text-xs text-muted-foreground">
+                    After transfer, upload your payment screenshot below. The secretariat will verify and mark your status as <strong>Paid</strong>.
+                  </p>
                 </div>
-                <p className="mt-3 text-xs text-muted-foreground">
-                  After transfer, send proof of payment to the secretariat. Your status will be updated to <strong>Paid</strong>.
-                </p>
-              </div>
+                <ProofUpload registrationId={data.id} />
+              </>
             ) : (
               <div className="rounded-lg border border-border bg-secondary/40 p-4 text-sm">
                 <p className="font-semibold text-primary">Pay at the venue</p>

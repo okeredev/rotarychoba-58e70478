@@ -26,11 +26,16 @@ export const Route = createFileRoute("/register")({
 });
 
 const formSchema = z.object({
+  title: z.string().trim().max(20).optional().or(z.literal("")),
   full_name: z.string().trim().min(2, "Enter your full name").max(120),
   email: z.string().trim().email("Enter a valid email").max(200),
   phone: z.string().trim().min(6, "Enter a valid phone").max(30),
   occupation: z.string().trim().max(120).optional().or(z.literal("")),
+  position: z.string().trim().max(120).optional().or(z.literal("")),
   organization: z.string().trim().max(120).optional().or(z.literal("")),
+  rotary_club: z.string().trim().max(160).optional().or(z.literal("")),
+  address: z.string().trim().max(300).optional().or(z.literal("")),
+  guests_count: z.coerce.number().int().min(0).max(20).default(0),
   notes: z.string().trim().max(500).optional().or(z.literal("")),
 });
 
@@ -38,6 +43,7 @@ function Register() {
   const { tier } = Route.useSearch();
   const navigate = useNavigate();
   const [selectedTier, setSelectedTier] = useState<TierKey>(tier);
+  const [title, setTitle] = useState<string>("");
   const [submitting, setSubmitting] = useState(false);
   const [success, setSuccess] = useState<null | { id: string; tier: TierKey }>(null);
 

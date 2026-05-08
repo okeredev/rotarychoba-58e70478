@@ -254,17 +254,27 @@ function Field({
   label,
   type = "text",
   required,
+  placeholder,
 }: {
   id: string;
   label: string;
   type?: string;
   required?: boolean;
+  placeholder?: string;
 }) {
   return (
     <div>
       <Label htmlFor={id}>{label}</Label>
-      <Input id={id} name={id} type={type} required={required} className="mt-2" />
+      <Input id={id} name={id} type={type} required={required} placeholder={placeholder} className="mt-2" />
     </div>
+  );
+}
+
+function SectionHeading({ children }: { children: React.ReactNode }) {
+  return (
+    <p className="text-xs uppercase tracking-[0.2em] text-gold font-semibold border-b border-border pb-2">
+      {children}
+    </p>
   );
 }
 

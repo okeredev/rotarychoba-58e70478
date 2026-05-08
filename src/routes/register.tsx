@@ -7,9 +7,14 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Card } from "@/components/ui/card";
+import {
+  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
+} from "@/components/ui/select";
 import { TIERS, formatNGN, VIP_BANK, type TierKey } from "@/lib/tiers";
 import { toast } from "sonner";
 import { ArrowLeft, Check, Copy } from "lucide-react";
+
+const TITLES = ["Mr.", "Mrs.", "Miss", "Ms.", "Dr.", "Prof.", "Engr.", "Chief", "Hon.", "Rtn.", "PP", "PE", "DGN", "PDG"] as const;
 
 const tierSchema = z.enum(["standard", "premium", "vip"]).catch("standard");
 
@@ -21,11 +26,16 @@ export const Route = createFileRoute("/register")({
 });
 
 const formSchema = z.object({
+  title: z.string().trim().max(20).optional().or(z.literal("")),
   full_name: z.string().trim().min(2, "Enter your full name").max(120),
   email: z.string().trim().email("Enter a valid email").max(200),
   phone: z.string().trim().min(6, "Enter a valid phone").max(30),
   occupation: z.string().trim().max(120).optional().or(z.literal("")),
+  position: z.string().trim().max(120).optional().or(z.literal("")),
   organization: z.string().trim().max(120).optional().or(z.literal("")),
+  rotary_club: z.string().trim().max(160).optional().or(z.literal("")),
+  address: z.string().trim().max(300).optional().or(z.literal("")),
+  guests_count: z.coerce.number().int().min(0).max(20).default(0),
   notes: z.string().trim().max(500).optional().or(z.literal("")),
 });
 
@@ -33,6 +43,7 @@ function Register() {
   const { tier } = Route.useSearch();
   const navigate = useNavigate();
   const [selectedTier, setSelectedTier] = useState<TierKey>(tier);
+  const [title, setTitle] = useState<string>("");
   const [submitting, setSubmitting] = useState(false);
   const [success, setSuccess] = useState<null | { id: string; tier: TierKey }>(null);
 
@@ -42,11 +53,16 @@ function Register() {
     e.preventDefault();
     const fd = new FormData(e.currentTarget);
     const parsed = formSchema.safeParse({
+      title,
       full_name: fd.get("full_name"),
       email: fd.get("email"),
       phone: fd.get("phone"),
       occupation: fd.get("occupation"),
+      position: fd.get("position"),
       organization: fd.get("organization"),
+      rotary_club: fd.get("rotary_club"),
+      address: fd.get("address"),
+      guests_count: fd.get("guests_count") || 0,
       notes: fd.get("notes"),
     });
 
@@ -56,11 +72,19 @@ function Register() {
     }
 
     setSubmitting(true);
+    const d = parsed.data;
     const payload = {
-      ...parsed.data,
-      occupation: parsed.data.occupation || null,
-      organization: parsed.data.organization || null,
-      notes: parsed.data.notes || null,
+      title: d.title || null,
+      full_name: d.full_name,
+      email: d.email,
+      phone: d.phone,
+      occupation: d.occupation || null,
+      position: d.position || null,
+      organization: d.organization || null,
+      rotary_club: d.rotary_club || null,
+      address: d.address || null,
+      guests_count: d.guests_count,
+      notes: d.notes || null,
       tier: selectedTier,
       amount: tierData.amount,
       payment_status: (selectedTier === "vip" ? "pending" : "pay_at_venue") as
@@ -161,18 +185,49 @@ function Register() {
 
         <Card className="mt-6 p-6 md:p-8">
           <form onSubmit={handleSubmit} className="grid gap-5">
-            <Field id="full_name" label="Full name *" required />
-            <div className="grid gap-5 md:grid-cols-2">
-              <Field id="email" type="email" label="Email *" required />
-              <Field id="phone" type="tel" label="Phone *" required />
+            <SectionHeading>Personal details</SectionHeading>
+            <div className="grid gap-5 md:grid-cols-[140px_1fr]">
+              <div>
+                <Label htmlFor="title">Title</Label>
+                <Select value={title} onValueChange={setTitle}>
+                  <SelectTrigger id="title" className="mt-2"><SelectValue placeholder="Select" /></SelectTrigger>
+                  <SelectContent>
+                    {TITLES.map((t) => (<SelectItem key={t} value={t}>{t}</SelectItem>))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <Field id="full_name" label="Full name *" required placeholder="Enter your full name" />
             </div>
             <div className="grid gap-5 md:grid-cols-2">
-              <Field id="occupation" label="Occupation" />
-              <Field id="organization" label="Organization / Club" />
+              <Field id="email" type="email" label="Email *" required placeholder="you@example.com" />
+              <Field id="phone" type="tel" label="Phone *" required placeholder="+234 800 000 0000" />
             </div>
             <div>
-              <Label htmlFor="notes">Notes (dietary, accessibility, etc.)</Label>
-              <Textarea id="notes" name="notes" maxLength={500} className="mt-2" />
+              <Label htmlFor="address">Address</Label>
+              <Textarea id="address" name="address" maxLength={300} rows={2} className="mt-2" placeholder="Street, city, state" />
+            </div>
+
+            <SectionHeading>Professional details</SectionHeading>
+            <div className="grid gap-5 md:grid-cols-2">
+              <Field id="occupation" label="Occupation" placeholder="e.g. Medical Doctor" />
+              <Field id="position" label="Position / Job title" placeholder="e.g. Managing Director" />
+            </div>
+            <div className="grid gap-5 md:grid-cols-2">
+              <Field id="organization" label="Organization / Company" placeholder="e.g. ABC Holdings Ltd." />
+              <Field id="rotary_club" label="Rotary club (if Rotarian)" placeholder="e.g. Rotary Club of Port Harcourt" />
+            </div>
+
+            <SectionHeading>Attendance</SectionHeading>
+            <div className="grid gap-5 md:grid-cols-2">
+              <div>
+                <Label htmlFor="guests_count">Number of additional guests</Label>
+                <Input id="guests_count" name="guests_count" type="number" min={0} max={20} defaultValue={0} className="mt-2" />
+                <p className="mt-1 text-xs text-muted-foreground">Each guest pays the same tier fee at the venue.</p>
+              </div>
+            </div>
+            <div>
+              <Label htmlFor="notes">Notes (dietary, accessibility, special requests)</Label>
+              <Textarea id="notes" name="notes" maxLength={500} className="mt-2" placeholder="Anything we should know?" />
             </div>
 
             <div className="flex flex-col sm:flex-row sm:items-center gap-4 pt-2 border-t border-border">
@@ -199,17 +254,27 @@ function Field({
   label,
   type = "text",
   required,
+  placeholder,
 }: {
   id: string;
   label: string;
   type?: string;
   required?: boolean;
+  placeholder?: string;
 }) {
   return (
     <div>
       <Label htmlFor={id}>{label}</Label>
-      <Input id={id} name={id} type={type} required={required} className="mt-2" />
+      <Input id={id} name={id} type={type} required={required} placeholder={placeholder} className="mt-2" />
     </div>
+  );
+}
+
+function SectionHeading({ children }: { children: React.ReactNode }) {
+  return (
+    <p className="text-xs uppercase tracking-[0.2em] text-gold font-semibold border-b border-border pb-2">
+      {children}
+    </p>
   );
 }
 

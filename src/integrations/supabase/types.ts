@@ -52,10 +52,12 @@ export type Database = {
       }
       registrations: {
         Row: {
+          address: string | null
           amount: number
           created_at: string
           email: string
           full_name: string
+          guests_count: number
           id: string
           notes: string | null
           occupation: string | null
@@ -63,14 +65,19 @@ export type Database = {
           payment_reference: string | null
           payment_status: Database["public"]["Enums"]["payment_status"]
           phone: string
+          position: string | null
+          rotary_club: string | null
           tier: Database["public"]["Enums"]["registration_tier"]
+          title: string | null
           updated_at: string
         }
         Insert: {
+          address?: string | null
           amount: number
           created_at?: string
           email: string
           full_name: string
+          guests_count?: number
           id?: string
           notes?: string | null
           occupation?: string | null
@@ -78,14 +85,19 @@ export type Database = {
           payment_reference?: string | null
           payment_status?: Database["public"]["Enums"]["payment_status"]
           phone: string
+          position?: string | null
+          rotary_club?: string | null
           tier: Database["public"]["Enums"]["registration_tier"]
+          title?: string | null
           updated_at?: string
         }
         Update: {
+          address?: string | null
           amount?: number
           created_at?: string
           email?: string
           full_name?: string
+          guests_count?: number
           id?: string
           notes?: string | null
           occupation?: string | null
@@ -93,7 +105,10 @@ export type Database = {
           payment_reference?: string | null
           payment_status?: Database["public"]["Enums"]["payment_status"]
           phone?: string
+          position?: string | null
+          rotary_club?: string | null
           tier?: Database["public"]["Enums"]["registration_tier"]
+          title?: string | null
           updated_at?: string
         }
         Relationships: []

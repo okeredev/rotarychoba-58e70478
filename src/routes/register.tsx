@@ -185,18 +185,49 @@ function Register() {
 
         <Card className="mt-6 p-6 md:p-8">
           <form onSubmit={handleSubmit} className="grid gap-5">
-            <Field id="full_name" label="Full name *" required />
-            <div className="grid gap-5 md:grid-cols-2">
-              <Field id="email" type="email" label="Email *" required />
-              <Field id="phone" type="tel" label="Phone *" required />
+            <SectionHeading>Personal details</SectionHeading>
+            <div className="grid gap-5 md:grid-cols-[140px_1fr]">
+              <div>
+                <Label htmlFor="title">Title</Label>
+                <Select value={title} onValueChange={setTitle}>
+                  <SelectTrigger id="title" className="mt-2"><SelectValue placeholder="Select" /></SelectTrigger>
+                  <SelectContent>
+                    {TITLES.map((t) => (<SelectItem key={t} value={t}>{t}</SelectItem>))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <Field id="full_name" label="Full name *" required placeholder="Enter your full name" />
             </div>
             <div className="grid gap-5 md:grid-cols-2">
-              <Field id="occupation" label="Occupation" />
-              <Field id="organization" label="Organization / Club" />
+              <Field id="email" type="email" label="Email *" required placeholder="you@example.com" />
+              <Field id="phone" type="tel" label="Phone *" required placeholder="+234 800 000 0000" />
             </div>
             <div>
-              <Label htmlFor="notes">Notes (dietary, accessibility, etc.)</Label>
-              <Textarea id="notes" name="notes" maxLength={500} className="mt-2" />
+              <Label htmlFor="address">Address</Label>
+              <Textarea id="address" name="address" maxLength={300} rows={2} className="mt-2" placeholder="Street, city, state" />
+            </div>
+
+            <SectionHeading>Professional details</SectionHeading>
+            <div className="grid gap-5 md:grid-cols-2">
+              <Field id="occupation" label="Occupation" placeholder="e.g. Medical Doctor" />
+              <Field id="position" label="Position / Job title" placeholder="e.g. Managing Director" />
+            </div>
+            <div className="grid gap-5 md:grid-cols-2">
+              <Field id="organization" label="Organization / Company" placeholder="e.g. ABC Holdings Ltd." />
+              <Field id="rotary_club" label="Rotary club (if Rotarian)" placeholder="e.g. Rotary Club of Port Harcourt" />
+            </div>
+
+            <SectionHeading>Attendance</SectionHeading>
+            <div className="grid gap-5 md:grid-cols-2">
+              <div>
+                <Label htmlFor="guests_count">Number of additional guests</Label>
+                <Input id="guests_count" name="guests_count" type="number" min={0} max={20} defaultValue={0} className="mt-2" />
+                <p className="mt-1 text-xs text-muted-foreground">Each guest pays the same tier fee at the venue.</p>
+              </div>
+            </div>
+            <div>
+              <Label htmlFor="notes">Notes (dietary, accessibility, special requests)</Label>
+              <Textarea id="notes" name="notes" maxLength={500} className="mt-2" placeholder="Anything we should know?" />
             </div>
 
             <div className="flex flex-col sm:flex-row sm:items-center gap-4 pt-2 border-t border-border">

@@ -7,9 +7,14 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Card } from "@/components/ui/card";
+import {
+  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
+} from "@/components/ui/select";
 import { TIERS, formatNGN, VIP_BANK, type TierKey } from "@/lib/tiers";
 import { toast } from "sonner";
 import { ArrowLeft, Check, Copy } from "lucide-react";
+
+const TITLES = ["Mr.", "Mrs.", "Miss", "Ms.", "Dr.", "Prof.", "Engr.", "Chief", "Hon.", "Rtn.", "PP", "PE", "DGN", "PDG"] as const;
 
 const tierSchema = z.enum(["standard", "premium", "vip"]).catch("standard");
 

@@ -1,0 +1,56 @@
+export type TierKey = "standard" | "premium" | "vip";
+
+export const TIERS: Array<{
+  key: TierKey;
+  name: string;
+  amount: number;
+  tagline: string;
+  perks: string[];
+  payAtVenue: boolean;
+}> = [
+  {
+    key: "standard",
+    name: "Standard",
+    amount: 10000,
+    tagline: "General attendance",
+    perks: ["Access to the ceremony", "Cocktail reception"],
+    payAtVenue: true,
+  },
+  {
+    key: "premium",
+    name: "Premium",
+    amount: 20000,
+    tagline: "Attendance + event brochure",
+    perks: ["Access to the ceremony", "Official event brochure", "Reserved seating"],
+    payAtVenue: true,
+  },
+  {
+    key: "vip",
+    name: "VIP",
+    amount: 50000,
+    tagline: "The full Rotary experience",
+    perks: [
+      "Access to the ceremony",
+      "Official event brochure",
+      "Exclusive souvenir & special gifts",
+      "VIP seating & recognition",
+    ],
+    payAtVenue: false,
+  },
+];
+
+export const formatNGN = (n: number) =>
+  new Intl.NumberFormat("en-NG", { style: "currency", currency: "NGN", maximumFractionDigits: 0 }).format(n);
+
+export const VIP_BANK = {
+  bankName: "Bank details to be provided by Rotary Treasurer",
+  accountName: "Rotary Club of Choba-Uniport",
+  accountNumber: "Contact secretariat for account number",
+};
+
+export const EVENT = {
+  name: "16th Installation Ceremony",
+  club: "Rotary Club of Choba-Uniport",
+  date: "Friday, 3rd July 2026",
+  venue: "Helena Haven Hotel",
+};

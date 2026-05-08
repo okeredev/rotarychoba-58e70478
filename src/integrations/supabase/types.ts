@@ -81,6 +81,7 @@ export type Database = {
           occupation: string | null
           organization: string | null
           payment_method: string
+          payment_proof_url: string | null
           payment_reference: string | null
           payment_status: Database["public"]["Enums"]["payment_status"]
           phone: string
@@ -102,6 +103,7 @@ export type Database = {
           occupation?: string | null
           organization?: string | null
           payment_method?: string
+          payment_proof_url?: string | null
           payment_reference?: string | null
           payment_status?: Database["public"]["Enums"]["payment_status"]
           phone: string
@@ -123,6 +125,7 @@ export type Database = {
           occupation?: string | null
           organization?: string | null
           payment_method?: string
+          payment_proof_url?: string | null
           payment_reference?: string | null
           payment_status?: Database["public"]["Enums"]["payment_status"]
           phone?: string
@@ -160,6 +163,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      attach_payment_proof: {
+        Args: { proof_url: string; reg_id: string }
+        Returns: undefined
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]

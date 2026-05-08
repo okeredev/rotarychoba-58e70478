@@ -8,7 +8,7 @@ import { Card } from "@/components/ui/card";
 import { toast } from "sonner";
 import { ArrowLeft, ShieldCheck } from "lucide-react";
 
-export const Route = createFileRoute("/admin/login")({
+export const Route = createFileRoute("/admin_/login")({
   component: AdminLogin,
 });
 

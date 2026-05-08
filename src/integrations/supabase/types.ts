@@ -14,6 +14,42 @@ export type Database = {
   }
   public: {
     Tables: {
+      board_members: {
+        Row: {
+          bio: string | null
+          category: Database["public"]["Enums"]["member_category"]
+          created_at: string
+          full_name: string
+          id: string
+          photo_url: string | null
+          position: string
+          sort_order: number
+          updated_at: string
+        }
+        Insert: {
+          bio?: string | null
+          category?: Database["public"]["Enums"]["member_category"]
+          created_at?: string
+          full_name: string
+          id?: string
+          photo_url?: string | null
+          position: string
+          sort_order?: number
+          updated_at?: string
+        }
+        Update: {
+          bio?: string | null
+          category?: Database["public"]["Enums"]["member_category"]
+          created_at?: string
+          full_name?: string
+          id?: string
+          photo_url?: string | null
+          position?: string
+          sort_order?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
       registrations: {
         Row: {
           amount: number
@@ -98,6 +134,7 @@ export type Database = {
     }
     Enums: {
       app_role: "admin" | "user"
+      member_category: "incoming" | "board"
       payment_status: "pending" | "pay_at_venue" | "paid" | "cancelled"
       registration_tier: "standard" | "premium" | "vip"
     }
@@ -228,6 +265,7 @@ export const Constants = {
   public: {
     Enums: {
       app_role: ["admin", "user"],
+      member_category: ["incoming", "board"],
       payment_status: ["pending", "pay_at_venue", "paid", "cancelled"],
       registration_tier: ["standard", "premium", "vip"],
     },

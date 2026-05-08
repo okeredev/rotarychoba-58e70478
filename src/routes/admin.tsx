@@ -223,12 +223,21 @@ function RegistrationsPanel() {
               {filtered.map((r) => (
                 <TableRow key={r.id}>
                   <TableCell>
-                    <div className="font-medium">{r.full_name}</div>
-                    {r.organization && <div className="text-xs text-muted-foreground">{r.organization}</div>}
+                    <div className="font-medium">
+                      {r.title ? `${r.title} ` : ""}{r.full_name}
+                    </div>
+                    {(r.position || r.organization) && (
+                      <div className="text-xs text-muted-foreground">
+                        {[r.position, r.organization].filter(Boolean).join(" · ")}
+                      </div>
+                    )}
+                    {r.rotary_club && <div className="text-xs text-muted-foreground italic">{r.rotary_club}</div>}
+                    {r.guests_count > 0 && <div className="text-xs text-gold font-medium mt-0.5">+{r.guests_count} guest{r.guests_count > 1 ? "s" : ""}</div>}
                   </TableCell>
                   <TableCell>
                     <div className="text-sm">{r.email}</div>
                     <div className="text-xs text-muted-foreground">{r.phone}</div>
+                    {r.address && <div className="text-xs text-muted-foreground mt-0.5 max-w-[220px] truncate" title={r.address}>{r.address}</div>}
                   </TableCell>
                   <TableCell>
                     <Badge variant={r.tier === "vip" ? "default" : "secondary"} className={r.tier === "vip" ? "bg-gold text-gold-foreground" : ""}>{r.tier.toUpperCase()}</Badge>

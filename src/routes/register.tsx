@@ -53,11 +53,16 @@ function Register() {
     e.preventDefault();
     const fd = new FormData(e.currentTarget);
     const parsed = formSchema.safeParse({
+      title,
       full_name: fd.get("full_name"),
       email: fd.get("email"),
       phone: fd.get("phone"),
       occupation: fd.get("occupation"),
+      position: fd.get("position"),
       organization: fd.get("organization"),
+      rotary_club: fd.get("rotary_club"),
+      address: fd.get("address"),
+      guests_count: fd.get("guests_count") || 0,
       notes: fd.get("notes"),
     });
 
@@ -67,11 +72,19 @@ function Register() {
     }
 
     setSubmitting(true);
+    const d = parsed.data;
     const payload = {
-      ...parsed.data,
-      occupation: parsed.data.occupation || null,
-      organization: parsed.data.organization || null,
-      notes: parsed.data.notes || null,
+      title: d.title || null,
+      full_name: d.full_name,
+      email: d.email,
+      phone: d.phone,
+      occupation: d.occupation || null,
+      position: d.position || null,
+      organization: d.organization || null,
+      rotary_club: d.rotary_club || null,
+      address: d.address || null,
+      guests_count: d.guests_count,
+      notes: d.notes || null,
       tier: selectedTier,
       amount: tierData.amount,
       payment_status: (selectedTier === "vip" ? "pending" : "pay_at_venue") as

@@ -13,7 +13,7 @@ import {
 import { TIERS, formatNGN, EVENT, type TierKey } from "@/lib/tiers";
 import { fetchBankInfo, DEFAULT_BANK, type BankInfo } from "@/lib/settings";
 import { toast } from "sonner";
-import { ArrowLeft, Check, Copy, Printer, Calendar, MapPin } from "lucide-react";
+import { ArrowLeft, Check, Copy, Printer, Calendar, MapPin, Upload, ImageIcon } from "lucide-react";
 import rotaryWheel from "@/assets/rotary-wheel.png";
 
 const TITLES = ["Mr.", "Mrs.", "Miss", "Ms.", "Dr.", "Prof.", "Engr.", "Chief", "Hon.", "Rtn.", "PP", "PE", "DGN", "PDG"] as const;
@@ -344,19 +344,22 @@ function SuccessView({ data, bank }: { data: SuccessData; bank: BankInfo }) {
             </div>
 
             {isPayNow ? (
-              <div className="rounded-lg border-2 border-gold bg-gold/5 p-4">
-                <p className="font-semibold text-primary">Bank transfer details</p>
-                <div className="mt-3 grid gap-1 text-sm">
-                  <BankRow label="Bank" value={bank.bank_name} />
-                  <BankRow label="Account name" value={bank.account_name} />
-                  <BankRow label="Account number" value={bank.account_number} />
-                  <BankRow label="Amount" value={formatNGN(totalAmount)} />
-                  <BankRow label="Reference" value={reference} />
+              <>
+                <div className="rounded-lg border-2 border-gold bg-gold/5 p-4">
+                  <p className="font-semibold text-primary">Bank transfer details</p>
+                  <div className="mt-3 grid gap-1 text-sm">
+                    <BankRow label="Bank" value={bank.bank_name} />
+                    <BankRow label="Account name" value={bank.account_name} />
+                    <BankRow label="Account number" value={bank.account_number} />
+                    <BankRow label="Amount" value={formatNGN(totalAmount)} />
+                    <BankRow label="Reference" value={reference} />
+                  </div>
+                  <p className="mt-3 text-xs text-muted-foreground">
+                    After transfer, upload your payment screenshot below. The secretariat will verify and mark your status as <strong>Paid</strong>.
+                  </p>
                 </div>
-                <p className="mt-3 text-xs text-muted-foreground">
-                  After transfer, send proof of payment to the secretariat. Your status will be updated to <strong>Paid</strong>.
-                </p>
-              </div>
+                <ProofUpload registrationId={data.id} />
+              </>
             ) : (
               <div className="rounded-lg border border-border bg-secondary/40 p-4 text-sm">
                 <p className="font-semibold text-primary">Pay at the venue</p>
@@ -421,6 +424,73 @@ function SectionHeading({ children }: { children: React.ReactNode }) {
     <p className="text-xs uppercase tracking-[0.2em] text-gold font-semibold border-b border-border pb-2">
       {children}
     </p>
+  );
+}
+
+function ProofUpload({ registrationId }: { registrationId: string }) {
+  const [uploading, setUploading] = useState(false);
+  const [uploadedUrl, setUploadedUrl] = useState<string | null>(null);
+
+  async function handleFile(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (!file.type.startsWith("image/")) {
+      toast.error("Please upload an image (PNG/JPG)");
+      return;
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error("Image must be under 5 MB");
+      return;
+    }
+    setUploading(true);
+    const ext = file.name.split(".").pop()?.toLowerCase() || "jpg";
+    const path = `${registrationId}/${Date.now()}.${ext}`;
+    const { error: upErr } = await supabase.storage
+      .from("payment-proofs")
+      .upload(path, file, { upsert: false, contentType: file.type });
+    if (upErr) {
+      setUploading(false);
+      toast.error(upErr.message);
+      return;
+    }
+    const { data: pub } = supabase.storage.from("payment-proofs").getPublicUrl(path);
+    const url = pub.publicUrl;
+    const { error: rpcErr } = await supabase.rpc("attach_payment_proof", {
+      reg_id: registrationId,
+      proof_url: url,
+    });
+    setUploading(false);
+    if (rpcErr) {
+      toast.error(rpcErr.message);
+      return;
+    }
+    setUploadedUrl(url);
+    toast.success("Payment proof uploaded");
+  }
+
+  if (uploadedUrl) {
+    return (
+      <div className="rounded-lg border-2 border-primary/30 bg-secondary/40 p-4 print:hidden">
+        <p className="font-semibold text-primary flex items-center gap-2">
+          <Check className="size-4" /> Payment proof received
+        </p>
+        <p className="mt-1 text-xs text-muted-foreground">The secretariat will verify and confirm your payment.</p>
+        <a href={uploadedUrl} target="_blank" rel="noreferrer" className="mt-3 inline-flex items-center gap-2 text-xs text-primary hover:underline">
+          <ImageIcon className="size-3.5" /> View uploaded screenshot
+        </a>
+      </div>
+    );
+  }
+
+  return (
+    <label className="block rounded-lg border-2 border-dashed border-primary/40 bg-card hover:bg-secondary/50 transition cursor-pointer p-5 text-center print:hidden">
+      <Upload className="size-6 mx-auto text-primary" />
+      <p className="mt-2 font-semibold text-primary">
+        {uploading ? "Uploading…" : "Upload payment screenshot"}
+      </p>
+      <p className="mt-1 text-xs text-muted-foreground">PNG or JPG, up to 5 MB</p>
+      <input type="file" accept="image/*" className="hidden" onChange={handleFile} disabled={uploading} />
+    </label>
   );
 }
 

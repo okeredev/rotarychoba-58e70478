@@ -258,6 +258,13 @@ function RegistrationsPanel() {
                         <SelectItem value="cancelled">Cancelled</SelectItem>
                       </SelectContent>
                     </Select>
+                    {r.payment_proof_url ? (
+                      <a href={r.payment_proof_url} target="_blank" rel="noreferrer" className="mt-1 inline-block text-xs text-primary hover:underline">
+                        View proof
+                      </a>
+                    ) : (
+                      r.payment_method === "pay_now" && <div className="mt-1 text-xs text-muted-foreground">No proof yet</div>
+                    )}
                   </TableCell>
                   <TableCell className="text-sm text-muted-foreground">
                     {new Date(r.created_at).toLocaleDateString("en-NG", { day: "2-digit", month: "short", year: "numeric" })}

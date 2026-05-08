@@ -116,12 +116,16 @@ function AdminDashboard() {
           <TabsList className="mb-6">
             <TabsTrigger value="registrations">Registrations</TabsTrigger>
             <TabsTrigger value="members">Leadership & Board</TabsTrigger>
+            <TabsTrigger value="settings">Settings</TabsTrigger>
           </TabsList>
           <TabsContent value="registrations">
             <RegistrationsPanel />
           </TabsContent>
           <TabsContent value="members">
             <MembersPanel />
+          </TabsContent>
+          <TabsContent value="settings">
+            <SettingsPanel />
           </TabsContent>
         </Tabs>
       </main>

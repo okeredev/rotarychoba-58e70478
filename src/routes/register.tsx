@@ -1,5 +1,5 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { z } from "zod";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -10,9 +10,11 @@ import { Card } from "@/components/ui/card";
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
-import { TIERS, formatNGN, VIP_BANK, type TierKey } from "@/lib/tiers";
+import { TIERS, formatNGN, EVENT, type TierKey } from "@/lib/tiers";
+import { fetchBankInfo, DEFAULT_BANK, type BankInfo } from "@/lib/settings";
 import { toast } from "sonner";
-import { ArrowLeft, Check, Copy } from "lucide-react";
+import { ArrowLeft, Check, Copy, Printer, Calendar, MapPin } from "lucide-react";
+import rotaryWheel from "@/assets/rotary-wheel.png";
 
 const TITLES = ["Mr.", "Mrs.", "Miss", "Ms.", "Dr.", "Prof.", "Engr.", "Chief", "Hon.", "Rtn.", "PP", "PE", "DGN", "PDG"] as const;
 
@@ -39,15 +41,34 @@ const formSchema = z.object({
   notes: z.string().trim().max(500).optional().or(z.literal("")),
 });
 
+type SuccessData = {
+  id: string;
+  tier: TierKey;
+  full_name: string;
+  email: string;
+  phone: string;
+  amount: number;
+  guests_count: number;
+  payment_method: "pay_now" | "pay_at_venue";
+};
+
 function Register() {
   const { tier } = Route.useSearch();
   const navigate = useNavigate();
   const [selectedTier, setSelectedTier] = useState<TierKey>(tier);
   const [title, setTitle] = useState<string>("");
+  const [paymentChoice, setPaymentChoice] = useState<"pay_now" | "pay_at_venue">("pay_at_venue");
+  const [bank, setBank] = useState<BankInfo>(DEFAULT_BANK);
   const [submitting, setSubmitting] = useState(false);
-  const [success, setSuccess] = useState<null | { id: string; tier: TierKey }>(null);
+  const [success, setSuccess] = useState<SuccessData | null>(null);
 
   const tierData = TIERS.find((t) => t.key === selectedTier)!;
+  const isVip = selectedTier === "vip";
+  const effectiveChoice: "pay_now" | "pay_at_venue" = isVip ? "pay_now" : paymentChoice;
+
+  useEffect(() => {
+    void fetchBankInfo().then(setBank);
+  }, []);
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -87,9 +108,8 @@ function Register() {
       notes: d.notes || null,
       tier: selectedTier,
       amount: tierData.amount,
-      payment_status: (selectedTier === "vip" ? "pending" : "pay_at_venue") as
-        | "pending"
-        | "pay_at_venue",
+      payment_method: effectiveChoice,
+      payment_status: "pending" as const,
     };
 
     const { data, error } = await supabase.from("registrations").insert(payload).select("id").single();
@@ -100,52 +120,20 @@ function Register() {
       return;
     }
     toast.success("Registration submitted!");
-    setSuccess({ id: data.id, tier: selectedTier });
+    setSuccess({
+      id: data.id,
+      tier: selectedTier,
+      full_name: d.full_name,
+      email: d.email,
+      phone: d.phone,
+      amount: tierData.amount,
+      guests_count: d.guests_count,
+      payment_method: effectiveChoice,
+    });
   }
 
   if (success) {
-    const isVip = success.tier === "vip";
-    return (
-      <div className="min-h-screen bg-background py-12 px-6">
-        <div className="container mx-auto max-w-2xl">
-          <Card className="p-8 md:p-12 text-center">
-            <div className="size-16 rounded-full mx-auto flex items-center justify-center" style={{ background: "var(--gradient-gold)" }}>
-              <Check className="size-8 text-gold-foreground" />
-            </div>
-            <h1 className="font-display text-3xl font-bold text-primary mt-6">You're registered</h1>
-            <p className="mt-2 text-muted-foreground">
-              Confirmation reference: <span className="font-mono text-foreground">{success.id.slice(0, 8).toUpperCase()}</span>
-            </p>
-
-            {isVip ? (
-              <div className="mt-8 text-left bg-secondary/60 rounded-lg p-6 border border-border">
-                <p className="font-semibold text-primary">Complete your VIP payment</p>
-                <p className="mt-1 text-sm text-muted-foreground">
-                  Please transfer {formatNGN(50000)} to the account below and forward proof to the secretariat.
-                </p>
-                <div className="mt-4 space-y-2 text-sm">
-                  <BankRow label="Bank" value={VIP_BANK.bankName} />
-                  <BankRow label="Account name" value={VIP_BANK.accountName} />
-                  <BankRow label="Account number" value={VIP_BANK.accountNumber} />
-                  <BankRow label="Amount" value={formatNGN(50000)} />
-                </div>
-              </div>
-            ) : (
-              <div className="mt-8 text-left bg-secondary/60 rounded-lg p-6 border border-border">
-                <p className="font-semibold text-primary">Payment at the venue</p>
-                <p className="mt-1 text-sm text-muted-foreground">
-                  Bring {formatNGN(tierData.amount)} on the day of the event. Present this reference at the registration desk.
-                </p>
-              </div>
-            )}
-
-            <Button asChild className="mt-8" variant="outline">
-              <Link to="/">Return home</Link>
-            </Button>
-          </Card>
-        </div>
-      </div>
-    );
+    return <SuccessView data={success} bank={bank} />;
   }
 
   return (
@@ -177,7 +165,7 @@ function Register() {
               <p className="text-xs uppercase tracking-widest text-muted-foreground">{t.name}</p>
               <p className="mt-1 text-xl font-display font-bold text-primary">{formatNGN(t.amount)}</p>
               <p className="mt-1 text-xs text-muted-foreground">
-                {t.payAtVenue ? "Pay at venue" : "Bank transfer required"}
+                {t.payAtVenue ? "Pay now or at venue" : "Bank transfer required"}
               </p>
             </button>
           ))}
@@ -230,12 +218,35 @@ function Register() {
               <Textarea id="notes" name="notes" maxLength={500} className="mt-2" placeholder="Anything we should know?" />
             </div>
 
+            {/* Payment choice */}
+            <SectionHeading>Payment</SectionHeading>
+            {isVip ? (
+              <div className="rounded-lg border-2 border-gold bg-gold/10 p-4 text-sm">
+                The VIP tier requires advance bank transfer. Bank details will be shown on the next screen.
+              </div>
+            ) : (
+              <div className="grid gap-3 sm:grid-cols-2">
+                <PaymentOption
+                  selected={paymentChoice === "pay_now"}
+                  onClick={() => setPaymentChoice("pay_now")}
+                  title="Pay now (bank transfer)"
+                  description="Get a confirmed receipt to skip the queue."
+                />
+                <PaymentOption
+                  selected={paymentChoice === "pay_at_venue"}
+                  onClick={() => setPaymentChoice("pay_at_venue")}
+                  title="Pay at the venue"
+                  description={`Bring ${formatNGN(tierData.amount)} on the day.`}
+                />
+              </div>
+            )}
+
             <div className="flex flex-col sm:flex-row sm:items-center gap-4 pt-2 border-t border-border">
               <div className="flex-1">
                 <p className="text-sm text-muted-foreground">You're paying</p>
                 <p className="font-display text-2xl font-bold text-primary">{formatNGN(tierData.amount)}</p>
                 <p className="text-xs text-muted-foreground">
-                  {tierData.payAtVenue ? "Payable at the venue" : "Bank transfer details shown after submission"}
+                  {effectiveChoice === "pay_now" ? "Bank details shown after submission" : "Payable at the venue"}
                 </p>
               </div>
               <Button type="submit" disabled={submitting} size="lg" className="bg-primary text-primary-foreground hover:bg-primary/90">
@@ -245,6 +256,141 @@ function Register() {
           </form>
         </Card>
       </div>
+    </div>
+  );
+}
+
+function PaymentOption({ selected, onClick, title, description }: {
+  selected: boolean; onClick: () => void; title: string; description: string;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={`text-left rounded-lg border-2 p-4 transition ${
+        selected ? "border-primary bg-secondary" : "border-border bg-card hover:border-primary/40"
+      }`}
+    >
+      <p className="font-semibold text-primary">{title}</p>
+      <p className="mt-1 text-xs text-muted-foreground">{description}</p>
+    </button>
+  );
+}
+
+function SuccessView({ data, bank }: { data: SuccessData; bank: BankInfo }) {
+  const reference = data.id.slice(0, 8).toUpperCase();
+  const tierName = TIERS.find((t) => t.key === data.tier)?.name ?? data.tier;
+  const totalSeats = 1 + data.guests_count;
+  const totalAmount = data.amount * totalSeats;
+  const isPayNow = data.payment_method === "pay_now";
+
+  return (
+    <div className="min-h-screen bg-background py-10 px-4">
+      <div className="container mx-auto max-w-2xl">
+        {/* Confirmation banner — hidden when printing */}
+        <div className="text-center mb-6 print:hidden">
+          <div className="size-14 rounded-full mx-auto flex items-center justify-center" style={{ background: "var(--gradient-gold)" }}>
+            <Check className="size-7 text-gold-foreground" />
+          </div>
+          <h1 className="font-display text-3xl font-bold text-primary mt-4">You're registered</h1>
+          <p className="mt-1 text-sm text-muted-foreground">
+            Save or print your receipt below — present it at the registration desk.
+          </p>
+        </div>
+
+        {/* Receipt — also the printable area */}
+        <Card id="receipt" className="p-0 overflow-hidden border-2 border-primary/20 print:border-0 print:shadow-none">
+          <div className="p-6 md:p-8" style={{ background: "var(--gradient-royal)" }}>
+            <div className="flex items-center justify-between text-white">
+              <div className="flex items-center gap-3">
+                <img src={rotaryWheel} alt="" className="size-12 bg-white/10 rounded-full p-1" />
+                <div>
+                  <p className="font-display text-lg font-bold leading-tight">Rotary Club of Choba-Uniport</p>
+                  <p className="text-xs text-white/70 uppercase tracking-widest">District 9141</p>
+                </div>
+              </div>
+              <div className="text-right">
+                <p className="text-[10px] uppercase tracking-widest text-white/70">Receipt</p>
+                <p className="font-mono text-lg font-bold">#{reference}</p>
+              </div>
+            </div>
+            <div className="mt-5 pt-5 border-t border-white/20 text-white">
+              <p className="font-display text-2xl font-bold">{EVENT.name}</p>
+              <div className="mt-2 flex flex-wrap gap-x-5 gap-y-1 text-sm text-white/80">
+                <span className="inline-flex items-center gap-1.5"><Calendar className="size-4 text-gold" />{EVENT.date}</span>
+                <span className="inline-flex items-center gap-1.5"><MapPin className="size-4 text-gold" />{EVENT.venue}</span>
+              </div>
+            </div>
+          </div>
+
+          <div className="p-6 md:p-8 grid gap-5">
+            <div className="grid grid-cols-2 gap-4 text-sm">
+              <Detail label="Attendee" value={data.full_name} />
+              <Detail label="Tier" value={tierName} />
+              <Detail label="Email" value={data.email} />
+              <Detail label="Phone" value={data.phone} />
+              <Detail label="Seats" value={`${totalSeats} (you${data.guests_count ? ` + ${data.guests_count} guest${data.guests_count > 1 ? "s" : ""}` : ""})`} />
+              <Detail label="Status" value={isPayNow ? "Awaiting transfer" : "Pay at venue"} />
+            </div>
+
+            <div className="rounded-lg bg-secondary/60 border border-border p-4 flex items-center justify-between">
+              <div>
+                <p className="text-xs uppercase tracking-widest text-muted-foreground">Total due</p>
+                <p className="font-display text-3xl font-bold text-primary">{formatNGN(totalAmount)}</p>
+              </div>
+              <div className="text-right text-xs text-muted-foreground">
+                {formatNGN(data.amount)} × {totalSeats}
+              </div>
+            </div>
+
+            {isPayNow ? (
+              <div className="rounded-lg border-2 border-gold bg-gold/5 p-4">
+                <p className="font-semibold text-primary">Bank transfer details</p>
+                <div className="mt-3 grid gap-1 text-sm">
+                  <BankRow label="Bank" value={bank.bank_name} />
+                  <BankRow label="Account name" value={bank.account_name} />
+                  <BankRow label="Account number" value={bank.account_number} />
+                  <BankRow label="Amount" value={formatNGN(totalAmount)} />
+                  <BankRow label="Reference" value={reference} />
+                </div>
+                <p className="mt-3 text-xs text-muted-foreground">
+                  After transfer, send proof of payment to the secretariat. Your status will be updated to <strong>Paid</strong>.
+                </p>
+              </div>
+            ) : (
+              <div className="rounded-lg border border-border bg-secondary/40 p-4 text-sm">
+                <p className="font-semibold text-primary">Pay at the venue</p>
+                <p className="mt-1 text-muted-foreground">
+                  Bring <strong>{formatNGN(totalAmount)}</strong> on the day of the event. Present this receipt at the registration desk for entry.
+                </p>
+              </div>
+            )}
+
+            <div className="border-t border-dashed border-border pt-4 text-[11px] text-muted-foreground text-center">
+              This receipt is your entry pass. Please present it (printed or on-screen) at the door.
+              <br /> Service Above Self · {EVENT.club}
+            </div>
+          </div>
+        </Card>
+
+        <div className="mt-6 flex flex-wrap justify-center gap-3 print:hidden">
+          <Button onClick={() => window.print()} className="bg-primary text-primary-foreground">
+            <Printer className="size-4 mr-2" /> Print / Save as PDF
+          </Button>
+          <Button asChild variant="outline">
+            <Link to="/">Return home</Link>
+          </Button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function Detail({ label, value }: { label: string; value: string }) {
+  return (
+    <div>
+      <p className="text-[10px] uppercase tracking-widest text-muted-foreground">{label}</p>
+      <p className="mt-0.5 font-medium text-foreground break-words">{value}</p>
     </div>
   );
 }
@@ -290,7 +436,7 @@ function BankRow({ label, value }: { label: string; value: string }) {
             navigator.clipboard.writeText(value);
             toast.success("Copied");
           }}
-          className="text-muted-foreground hover:text-primary"
+          className="text-muted-foreground hover:text-primary print:hidden"
           aria-label="Copy"
         >
           <Copy className="size-3.5" />

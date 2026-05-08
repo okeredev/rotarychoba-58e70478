@@ -495,3 +495,66 @@ function StatCard({ icon, label, value }: { icon: React.ReactNode; label: string
     </Card>
   );
 }
+
+function SettingsPanel() {
+  const [bank, setBank] = useState<BankInfo>(DEFAULT_BANK);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+
+  useEffect(() => {
+    void fetchBankInfo().then((b) => { setBank(b); setLoading(false); });
+  }, []);
+
+  async function save() {
+    setSaving(true);
+    const { error } = await saveBankInfo(bank);
+    setSaving(false);
+    if (error) return toast.error(error.message);
+    toast.success("Bank details saved");
+  }
+
+  return (
+    <div className="max-w-2xl">
+      <h2 className="font-display text-2xl font-bold text-primary">Bank account for transfers</h2>
+      <p className="text-sm text-muted-foreground mt-1">
+        These details appear on every receipt and the pay-now flow. Changes take effect immediately.
+      </p>
+
+      <Card className="mt-5 p-6 grid gap-4">
+        <div className="grid gap-2">
+          <Label>Bank name</Label>
+          <Input
+            disabled={loading}
+            value={bank.bank_name}
+            onChange={(e) => setBank({ ...bank, bank_name: e.target.value })}
+            placeholder="e.g. Zenith Bank"
+          />
+        </div>
+        <div className="grid gap-2">
+          <Label>Account name</Label>
+          <Input
+            disabled={loading}
+            value={bank.account_name}
+            onChange={(e) => setBank({ ...bank, account_name: e.target.value })}
+            placeholder="e.g. Rotary Club of Choba-Uniport"
+          />
+        </div>
+        <div className="grid gap-2">
+          <Label>Account number</Label>
+          <Input
+            disabled={loading}
+            value={bank.account_number}
+            onChange={(e) => setBank({ ...bank, account_number: e.target.value })}
+            placeholder="10-digit account number"
+            inputMode="numeric"
+          />
+        </div>
+        <div className="pt-2">
+          <Button onClick={save} disabled={saving || loading} className="bg-primary text-primary-foreground">
+            {saving ? "Saving…" : "Save bank details"}
+          </Button>
+        </div>
+      </Card>
+    </div>
+  );
+}

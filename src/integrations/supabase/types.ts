@@ -14,6 +14,24 @@ export type Database = {
   }
   public: {
     Tables: {
+      app_settings: {
+        Row: {
+          key: string
+          updated_at: string
+          value: string
+        }
+        Insert: {
+          key: string
+          updated_at?: string
+          value?: string
+        }
+        Update: {
+          key?: string
+          updated_at?: string
+          value?: string
+        }
+        Relationships: []
+      }
       board_members: {
         Row: {
           bio: string | null
@@ -62,6 +80,7 @@ export type Database = {
           notes: string | null
           occupation: string | null
           organization: string | null
+          payment_method: string
           payment_reference: string | null
           payment_status: Database["public"]["Enums"]["payment_status"]
           phone: string
@@ -82,6 +101,7 @@ export type Database = {
           notes?: string | null
           occupation?: string | null
           organization?: string | null
+          payment_method?: string
           payment_reference?: string | null
           payment_status?: Database["public"]["Enums"]["payment_status"]
           phone: string
@@ -102,6 +122,7 @@ export type Database = {
           notes?: string | null
           occupation?: string | null
           organization?: string | null
+          payment_method?: string
           payment_reference?: string | null
           payment_status?: Database["public"]["Enums"]["payment_status"]
           phone?: string

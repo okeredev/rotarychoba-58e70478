@@ -48,9 +48,9 @@ function ReceiptLookup() {
     }
     setLoading(true);
     const { data, error } = await supabase.rpc("lookup_registration", {
-      ref: ref || null,
-      phone_input: ph || null,
-      email_input: em || null,
+      ref: ref || undefined,
+      phone_input: ph || undefined,
+      email_input: em || undefined,
     });
     setLoading(false);
     if (error) {

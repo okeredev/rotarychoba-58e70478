@@ -250,7 +250,7 @@ function Register() {
             <SectionHeading>Payment</SectionHeading>
             {isVip ? (
               <div className="rounded-lg border-2 border-gold bg-gold/10 p-4 text-sm">
-                The VIP tier requires advance bank transfer. Bank details will be shown on the next screen.
+                The Platinum tier requires advance bank transfer to the official account below.
               </div>
             ) : (
               <div className="grid gap-3 sm:grid-cols-2">
@@ -266,6 +266,20 @@ function Register() {
                   title="Pay at the venue"
                   description={`Bring ${formatNGN(tierData.amount)} on the day.`}
                 />
+              </div>
+            )}
+
+            {effectiveChoice === "pay_now" && (
+              <div className="rounded-lg border-2 border-gold bg-gold/5 p-4">
+                <p className="font-semibold text-primary">Official bank transfer details</p>
+                <div className="mt-3 grid gap-1 text-sm">
+                  <BankRow label="Bank" value={bank.bank_name} />
+                  <BankRow label="Account name" value={bank.account_name} />
+                  <BankRow label="Account number" value={bank.account_number} />
+                </div>
+                <p className="mt-3 text-xs text-muted-foreground">
+                  After completing your registration, upload your payment screenshot on the next screen for verification.
+                </p>
               </div>
             )}
 

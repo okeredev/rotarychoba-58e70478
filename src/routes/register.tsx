@@ -130,7 +130,7 @@ function Register() {
       return;
     }
     toast.success("Registration submitted!");
-    setSuccess({
+    const successData: SuccessData = {
       id: data.id,
       tier: selectedTier,
       full_name: d.full_name,
@@ -139,11 +139,18 @@ function Register() {
       amount: tierData.amount,
       guests_count: d.guests_count,
       payment_method: effectiveChoice,
-    });
+    };
+    try {
+      window.localStorage.setItem("rcc:lastRegistration", JSON.stringify(successData));
+    } catch { /* ignore */ }
+    setSuccess(successData);
   }
 
   if (success) {
-    return <SuccessView data={success} bank={bank} />;
+    return <SuccessView data={success} bank={bank} onReset={() => {
+      try { window.localStorage.removeItem("rcc:lastRegistration"); } catch { /* ignore */ }
+      setSuccess(null);
+    }} />;
   }
 
   return (

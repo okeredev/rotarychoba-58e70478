@@ -32,6 +32,39 @@ export type Database = {
         }
         Relationships: []
       }
+      awards: {
+        Row: {
+          citation: string | null
+          created_at: string
+          full_name: string
+          id: string
+          photo_url: string | null
+          sort_order: number
+          updated_at: string
+          year: number | null
+        }
+        Insert: {
+          citation?: string | null
+          created_at?: string
+          full_name: string
+          id?: string
+          photo_url?: string | null
+          sort_order?: number
+          updated_at?: string
+          year?: number | null
+        }
+        Update: {
+          citation?: string | null
+          created_at?: string
+          full_name?: string
+          id?: string
+          photo_url?: string | null
+          sort_order?: number
+          updated_at?: string
+          year?: number | null
+        }
+        Relationships: []
+      }
       board_members: {
         Row: {
           bio: string | null
@@ -68,12 +101,57 @@ export type Database = {
         }
         Relationships: []
       }
+      raffle_sales: {
+        Row: {
+          amount: number
+          buyer_email: string | null
+          buyer_name: string
+          buyer_phone: string
+          created_at: string
+          id: string
+          notes: string | null
+          pack: Database["public"]["Enums"]["raffle_pack"]
+          payment_status: Database["public"]["Enums"]["payment_status"]
+          qty: number
+          reference: string | null
+          updated_at: string
+        }
+        Insert: {
+          amount: number
+          buyer_email?: string | null
+          buyer_name: string
+          buyer_phone: string
+          created_at?: string
+          id?: string
+          notes?: string | null
+          pack?: Database["public"]["Enums"]["raffle_pack"]
+          payment_status?: Database["public"]["Enums"]["payment_status"]
+          qty?: number
+          reference?: string | null
+          updated_at?: string
+        }
+        Update: {
+          amount?: number
+          buyer_email?: string | null
+          buyer_name?: string
+          buyer_phone?: string
+          created_at?: string
+          id?: string
+          notes?: string | null
+          pack?: Database["public"]["Enums"]["raffle_pack"]
+          payment_status?: Database["public"]["Enums"]["payment_status"]
+          qty?: number
+          reference?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       registrations: {
         Row: {
           address: string | null
           amount: number
           created_at: string
-          email: string
+          email: string | null
           full_name: string
           guests_count: number
           id: string
@@ -95,7 +173,7 @@ export type Database = {
           address?: string | null
           amount: number
           created_at?: string
-          email: string
+          email?: string | null
           full_name: string
           guests_count?: number
           id?: string
@@ -117,7 +195,7 @@ export type Database = {
           address?: string | null
           amount?: number
           created_at?: string
-          email?: string
+          email?: string | null
           full_name?: string
           guests_count?: number
           id?: string
@@ -133,6 +211,51 @@ export type Database = {
           rotary_club?: string | null
           tier?: Database["public"]["Enums"]["registration_tier"]
           title?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      sponsorships: {
+        Row: {
+          amount: number | null
+          brochure_path: string | null
+          company: string | null
+          contact_email: string | null
+          contact_phone: string | null
+          created_at: string
+          full_name: string
+          id: string
+          logo_path: string | null
+          message: string | null
+          status: Database["public"]["Enums"]["sponsorship_status"]
+          updated_at: string
+        }
+        Insert: {
+          amount?: number | null
+          brochure_path?: string | null
+          company?: string | null
+          contact_email?: string | null
+          contact_phone?: string | null
+          created_at?: string
+          full_name: string
+          id?: string
+          logo_path?: string | null
+          message?: string | null
+          status?: Database["public"]["Enums"]["sponsorship_status"]
+          updated_at?: string
+        }
+        Update: {
+          amount?: number | null
+          brochure_path?: string | null
+          company?: string | null
+          contact_email?: string | null
+          contact_phone?: string | null
+          created_at?: string
+          full_name?: string
+          id?: string
+          logo_path?: string | null
+          message?: string | null
+          status?: Database["public"]["Enums"]["sponsorship_status"]
           updated_at?: string
         }
         Relationships: []
@@ -175,7 +298,7 @@ export type Database = {
         Returns: boolean
       }
       lookup_registration: {
-        Args: { email_input: string; ref: string }
+        Args: { email_input?: string; phone_input?: string; ref?: string }
         Returns: {
           amount: number
           created_at: string
@@ -196,7 +319,9 @@ export type Database = {
       app_role: "admin" | "user"
       member_category: "incoming" | "board"
       payment_status: "pending" | "pay_at_venue" | "paid" | "cancelled"
+      raffle_pack: "single" | "pack20"
       registration_tier: "standard" | "premium" | "vip"
+      sponsorship_status: "new" | "contacted" | "confirmed" | "declined"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -327,7 +452,9 @@ export const Constants = {
       app_role: ["admin", "user"],
       member_category: ["incoming", "board"],
       payment_status: ["pending", "pay_at_venue", "paid", "cancelled"],
+      raffle_pack: ["single", "pack20"],
       registration_tier: ["standard", "premium", "vip"],
+      sponsorship_status: ["new", "contacted", "confirmed", "declined"],
     },
   },
 } as const

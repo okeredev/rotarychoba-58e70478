@@ -13,15 +13,20 @@ export const TIERS: Array<{
     name: "Regular",
     amount: 10000,
     tagline: "General attendance",
-    perks: ["Access to the ceremony", "Cocktail reception"],
+    perks: ["Access to the ceremony", "Cocktail reception", "Softcopy of event brochure"],
     payAtVenue: true,
   },
   {
     key: "premium",
     name: "Gold",
     amount: 20000,
-    tagline: "Attendance + event brochure",
-    perks: ["Access to the ceremony", "Official event brochure", "Reserved seating"],
+    tagline: "Attendance + brochure & souvenir",
+    perks: [
+      "Access to the ceremony",
+      "Hardcopy of event brochure",
+      "Custom event souvenir",
+      "Reserved seating",
+    ],
     payAtVenue: true,
   },
   {
@@ -31,7 +36,7 @@ export const TIERS: Array<{
     tagline: "The full Rotary experience",
     perks: [
       "Access to the ceremony",
-      "Official event brochure",
+      "Hardcopy of event brochure",
       "Exclusive souvenir & special gifts",
       "VIP seating & recognition",
     ],

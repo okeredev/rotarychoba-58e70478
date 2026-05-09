@@ -73,6 +73,7 @@ function Landing() {
             <a href="#tiers" className="text-foreground/80 hover:text-primary transition">Tiers</a>
             <a href="#president" className="text-foreground/80 hover:text-primary transition">President</a>
             <a href="#leadership" className="text-foreground/80 hover:text-primary transition">Leadership</a>
+            <a href="#awards" className="text-foreground/80 hover:text-primary transition">Awards</a>
             <Link to="/sponsor" className="text-foreground/80 hover:text-primary transition">Sponsor</Link>
             <Link to="/receipt" className="text-foreground/80 hover:text-primary transition">My slip</Link>
             <Button asChild size="sm" className="bg-primary text-primary-foreground hover:bg-primary/90">

@@ -430,6 +430,15 @@ function SuccessView({ data, bank, onReset }: { data: SuccessData; bank: BankInf
         </Card>
 
         <div className="mt-6 flex flex-wrap justify-center gap-3 print:hidden">
+          <Button
+            onClick={() => {
+              navigator.clipboard.writeText(reference);
+              toast.success(`Copied reference ${reference}`);
+            }}
+            className="bg-gold text-gold-foreground hover:bg-gold/90"
+          >
+            <Copy className="size-4 mr-2" /> Copy reference {reference}
+          </Button>
           <Button onClick={() => window.print()} className="bg-primary text-primary-foreground">
             <Printer className="size-4 mr-2" /> Print / Save as PDF
           </Button>
@@ -444,8 +453,8 @@ function SuccessView({ data, bank, onReset }: { data: SuccessData; bank: BankInf
           </Button>
         </div>
         <p className="mt-4 text-center text-xs text-muted-foreground print:hidden">
-          Your reference is <strong className="font-mono">{reference}</strong>. Save it — you'll
-          need it (with your email) to download your final slip once payment is approved.
+          Your reference is <strong className="font-mono">{reference}</strong>. Save it — or recover your slip later
+          using your <strong>phone number</strong> on the My slip page.
         </p>
       </div>
     </div>

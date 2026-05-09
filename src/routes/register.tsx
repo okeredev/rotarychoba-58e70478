@@ -342,9 +342,7 @@ function SuccessView({ data, bank, onReset }: { data: SuccessData; bank: BankInf
             </div>
           </div>
 
-          <div className="p-6 md:p-8 grid gap-5">
-            <div className="grid grid-cols-2 gap-4 text-sm">
-              <Detail label="Attendee" value={data.full_name} />
+          <div className="relative z-10 p-6 md:p-8 grid gap-5">
               <Detail label="Tier" value={tierName} />
               <Detail label="Email" value={data.email} />
               <Detail label="Phone" value={data.phone} />

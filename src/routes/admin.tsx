@@ -114,20 +114,20 @@ function AdminDashboard() {
 
       <main className="container mx-auto px-6 py-8">
         <Tabs defaultValue="registrations" className="w-full">
-          <TabsList className="mb-6">
+          <TabsList className="mb-6 flex-wrap h-auto">
             <TabsTrigger value="registrations">Registrations</TabsTrigger>
-            <TabsTrigger value="members">Leadership & Board</TabsTrigger>
+            <TabsTrigger value="sponsorships">Sponsorships</TabsTrigger>
+            <TabsTrigger value="raffle">Raffle</TabsTrigger>
+            <TabsTrigger value="awards">Awards</TabsTrigger>
+            <TabsTrigger value="members">Leadership &amp; Board</TabsTrigger>
             <TabsTrigger value="settings">Settings</TabsTrigger>
           </TabsList>
-          <TabsContent value="registrations">
-            <RegistrationsPanel />
-          </TabsContent>
-          <TabsContent value="members">
-            <MembersPanel />
-          </TabsContent>
-          <TabsContent value="settings">
-            <SettingsPanel />
-          </TabsContent>
+          <TabsContent value="registrations"><RegistrationsPanel /></TabsContent>
+          <TabsContent value="sponsorships"><SponsorshipsPanel /></TabsContent>
+          <TabsContent value="raffle"><RafflePanel /></TabsContent>
+          <TabsContent value="awards"><AwardsPanel /></TabsContent>
+          <TabsContent value="members"><MembersPanel /></TabsContent>
+          <TabsContent value="settings"><SettingsPanel /></TabsContent>
         </Tabs>
       </main>
     </div>

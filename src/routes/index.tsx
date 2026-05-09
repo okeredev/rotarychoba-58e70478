@@ -94,7 +94,7 @@ function Landing() {
               The 16<sup className="text-gold">th</sup> Installation Ceremony
             </h1>
             <p className="mt-5 text-base md:text-xl text-white/80 max-w-2xl mx-auto">
-              Join us as we celebrate the investiture of the new President &amp; Board of Directors of the
+              Join us as we celebrate the investiture of the new President &amp; Board of Directors/Induction of new members and award presentation of the
               <span className="text-gold font-semibold"> Rotary Club of Choba-Uniport</span>.
             </p>
 

@@ -18,12 +18,28 @@ type Member = {
   sort_order: number;
 };
 
+type Award = {
+  id: string;
+  full_name: string;
+  citation: string | null;
+  photo_url: string | null;
+  year: number | null;
+  sort_order: number;
+};
+
+const AWARD_RULES = [
+  "Must not be of questionable character",
+  "Must have contributed to humanitarian services",
+  "Must be a part- or full sponsor to a club project",
+];
+
 export const Route = createFileRoute("/")({
   component: Landing,
 });
 
 function Landing() {
   const [members, setMembers] = useState<Member[]>([]);
+  const [awards, setAwards] = useState<Award[]>([]);
 
   useEffect(() => {
     supabase
@@ -31,6 +47,11 @@ function Landing() {
       .select("*")
       .order("sort_order", { ascending: true })
       .then(({ data }) => setMembers((data as Member[]) ?? []));
+    supabase
+      .from("awards")
+      .select("*")
+      .order("sort_order", { ascending: true })
+      .then(({ data }) => setAwards((data as Award[]) ?? []));
   }, []);
 
   const incoming = members.filter((m) => m.category === "incoming");

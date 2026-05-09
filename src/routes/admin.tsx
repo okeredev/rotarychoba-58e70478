@@ -207,7 +207,7 @@ function RegistrationsPanel() {
     if (tierFilter !== "all" && r.tier !== tierFilter) return false;
     if (!search) return true;
     const q = search.toLowerCase();
-    return r.full_name.toLowerCase().includes(q) || r.email.toLowerCase().includes(q) || r.phone.toLowerCase().includes(q);
+    return r.full_name.toLowerCase().includes(q) || (r.email ?? "").toLowerCase().includes(q) || r.phone.toLowerCase().includes(q);
   }), [rows, search, tierFilter]);
 
   const stats = useMemo(() => {

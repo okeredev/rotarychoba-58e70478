@@ -159,8 +159,9 @@ function SlipView({ reg }: { reg: Reg }) {
           </p>
         </div>
 
-        <Card id="receipt" className="p-0 overflow-hidden border-2 border-primary/20 print:border-0 print:shadow-none">
-          <div className="p-6 md:p-8" style={{ background: "var(--gradient-royal)" }}>
+        <Card id="receipt" className={`relative p-0 overflow-hidden border-2 border-primary/20 print:border-0 print:shadow-none ${RECEIPT_LOCKED_CLASS}`} onContextMenu={(e) => e.preventDefault()}>
+          <ReceiptWatermark label={`Official · ${reference}`} />
+          <div className="relative z-10 p-6 md:p-8" style={{ background: "var(--gradient-royal)" }}>
             <div className="flex items-center justify-between text-white">
               <div className="flex items-center gap-3">
                 <img src={rotaryWheel} alt="" className="size-12 bg-white/10 rounded-full p-1" />

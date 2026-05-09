@@ -388,6 +388,13 @@ function SuccessView({ data, bank, onReset }: { data: SuccessData; bank: BankInf
               </div>
             )}
 
+            <ReceiptVerifyBlock
+              reference={reference}
+              email={data.email}
+              issuedAt={new Date().toLocaleDateString(undefined, { year: "numeric", month: "short", day: "numeric" })}
+              status="PROVISIONAL"
+            />
+
             <div className="border-t border-dashed border-border pt-4 text-[11px] text-muted-foreground text-center">
               This receipt is your entry pass. Please present it (printed or on-screen) at the door.
               <br /> Service Above Self · {EVENT.club}

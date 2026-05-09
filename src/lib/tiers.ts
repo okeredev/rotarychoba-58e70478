@@ -42,12 +42,6 @@ export const TIERS: Array<{
 export const formatNGN = (n: number) =>
   new Intl.NumberFormat("en-NG", { style: "currency", currency: "NGN", maximumFractionDigits: 0 }).format(n);
 
-export const VIP_BANK = {
-  bankName: "Bank details to be provided by Rotary Treasurer",
-  accountName: "Rotary Club of Choba-Uniport",
-  accountNumber: "Contact secretariat for account number",
-};
-
 export const EVENT = {
   name: "16th Installation Ceremony",
   club: "Rotary Club of Choba-Uniport",

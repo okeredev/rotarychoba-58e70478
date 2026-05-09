@@ -19,7 +19,7 @@ type Reg = {
   id: string;
   full_name: string;
   title: string | null;
-  email: string;
+  email: string | null;
   phone: string;
   tier: string;
   amount: number;
@@ -31,33 +31,46 @@ type Reg = {
 
 function ReceiptLookup() {
   const [reference, setReference] = useState("");
+  const [phone, setPhone] = useState("");
   const [email, setEmail] = useState("");
   const [loading, setLoading] = useState(false);
   const [reg, setReg] = useState<Reg | null>(null);
+  const [matches, setMatches] = useState<Reg[] | null>(null);
 
   async function handleLookup(e: React.FormEvent) {
     e.preventDefault();
-    if (reference.trim().length < 4 || !email.trim()) {
-      toast.error("Enter your reference code and email");
+    const ref = reference.trim();
+    const ph = phone.trim();
+    const em = email.trim();
+    if (ref.length < 4 && ph.length < 6) {
+      toast.error("Enter your reference code OR your phone number");
       return;
     }
     setLoading(true);
     const { data, error } = await supabase.rpc("lookup_registration", {
-      ref: reference.trim(),
-      email_input: email.trim(),
+      ref: ref || undefined,
+      phone_input: ph || undefined,
+      email_input: em || undefined,
     });
     setLoading(false);
     if (error) {
       toast.error(error.message);
       return;
     }
-    const row = (data as Reg[] | null)?.[0];
-    if (!row) {
-      toast.error("No registration found. Check your reference and email.");
+    const rows = (data as Reg[] | null) ?? [];
+    if (rows.length === 0) {
+      toast.error("No registration found. Check the details and try again.");
       setReg(null);
+      setMatches(null);
       return;
     }
-    setReg(row);
+    if (rows.length === 1) {
+      setReg(rows[0]);
+      setMatches(null);
+    } else {
+      setMatches(rows);
+      setReg(null);
+    }
   }
 
   if (reg) {
@@ -77,12 +90,13 @@ function ReceiptLookup() {
         <h1 className="font-display text-3xl font-bold text-primary">Download your entry slip</h1>
         <p className="mt-2 text-sm text-muted-foreground">
           Once your payment has been approved by the secretariat, retrieve and print your slip here.
+          Lost your reference? Search by your phone number instead.
         </p>
 
         <Card className="mt-6 p-6">
           <form onSubmit={handleLookup} className="grid gap-4">
             <div>
-              <Label htmlFor="reference">Reference code</Label>
+              <Label htmlFor="reference">Reference code (optional)</Label>
               <Input
                 id="reference"
                 value={reference}
@@ -93,7 +107,18 @@ function ReceiptLookup() {
               />
             </div>
             <div>
-              <Label htmlFor="email">Email used at registration</Label>
+              <Label htmlFor="phone">Phone number used at registration</Label>
+              <Input
+                id="phone"
+                type="tel"
+                value={phone}
+                onChange={(e) => setPhone(e.target.value)}
+                placeholder="+234 800 000 0000"
+                className="mt-2"
+              />
+            </div>
+            <div>
+              <Label htmlFor="email">Email (optional, helps narrow match)</Label>
               <Input
                 id="email"
                 type="email"
@@ -109,6 +134,25 @@ function ReceiptLookup() {
             </Button>
           </form>
         </Card>
+
+        {matches && matches.length > 1 && (
+          <Card className="mt-4 p-4">
+            <p className="text-sm font-semibold text-primary">Multiple registrations found</p>
+            <p className="mt-1 text-xs text-muted-foreground">Pick yours:</p>
+            <div className="mt-3 grid gap-2">
+              {matches.map((m) => (
+                <button
+                  key={m.id}
+                  onClick={() => setReg(m)}
+                  className="text-left rounded-md border border-border p-3 hover:bg-secondary/40"
+                >
+                  <p className="font-medium text-sm">{m.full_name}</p>
+                  <p className="text-xs text-muted-foreground font-mono">#{m.id.slice(0, 8).toUpperCase()} · {m.tier.toUpperCase()} · {m.payment_status}</p>
+                </button>
+              ))}
+            </div>
+          </Card>
+        )}
       </div>
     </div>
   );
@@ -188,7 +232,7 @@ function SlipView({ reg }: { reg: Reg }) {
             <div className="grid grid-cols-2 gap-4 text-sm">
               <Detail label="Attendee" value={fullName} />
               <Detail label="Tier" value={tierName} />
-              <Detail label="Email" value={reg.email} />
+              <Detail label="Email" value={reg.email ?? "—"} />
               <Detail label="Phone" value={reg.phone} />
               <Detail label="Seats" value={`${totalSeats}`} />
               <Detail label="Status" value="PAID" />
@@ -207,7 +251,7 @@ function SlipView({ reg }: { reg: Reg }) {
 
             <ReceiptVerifyBlock
               reference={reference}
-              email={reg.email}
+              email={reg.email ?? reg.phone}
               issuedAt={new Date().toLocaleDateString(undefined, { year: "numeric", month: "short", day: "numeric" })}
               status="OFFICIAL"
             />

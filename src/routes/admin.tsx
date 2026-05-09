@@ -114,20 +114,20 @@ function AdminDashboard() {
 
       <main className="container mx-auto px-6 py-8">
         <Tabs defaultValue="registrations" className="w-full">
-          <TabsList className="mb-6">
+          <TabsList className="mb-6 flex-wrap h-auto">
             <TabsTrigger value="registrations">Registrations</TabsTrigger>
-            <TabsTrigger value="members">Leadership & Board</TabsTrigger>
+            <TabsTrigger value="sponsorships">Sponsorships</TabsTrigger>
+            <TabsTrigger value="raffle">Raffle</TabsTrigger>
+            <TabsTrigger value="awards">Awards</TabsTrigger>
+            <TabsTrigger value="members">Leadership &amp; Board</TabsTrigger>
             <TabsTrigger value="settings">Settings</TabsTrigger>
           </TabsList>
-          <TabsContent value="registrations">
-            <RegistrationsPanel />
-          </TabsContent>
-          <TabsContent value="members">
-            <MembersPanel />
-          </TabsContent>
-          <TabsContent value="settings">
-            <SettingsPanel />
-          </TabsContent>
+          <TabsContent value="registrations"><RegistrationsPanel /></TabsContent>
+          <TabsContent value="sponsorships"><SponsorshipsPanel /></TabsContent>
+          <TabsContent value="raffle"><RafflePanel /></TabsContent>
+          <TabsContent value="awards"><AwardsPanel /></TabsContent>
+          <TabsContent value="members"><MembersPanel /></TabsContent>
+          <TabsContent value="settings"><SettingsPanel /></TabsContent>
         </Tabs>
       </main>
     </div>
@@ -207,7 +207,7 @@ function RegistrationsPanel() {
     if (tierFilter !== "all" && r.tier !== tierFilter) return false;
     if (!search) return true;
     const q = search.toLowerCase();
-    return r.full_name.toLowerCase().includes(q) || r.email.toLowerCase().includes(q) || r.phone.toLowerCase().includes(q);
+    return r.full_name.toLowerCase().includes(q) || (r.email ?? "").toLowerCase().includes(q) || r.phone.toLowerCase().includes(q);
   }), [rows, search, tierFilter]);
 
   const stats = useMemo(() => {
@@ -307,7 +307,8 @@ function RegistrationsPanel() {
                   <TableCell className="text-sm text-muted-foreground">
                     {new Date(r.created_at).toLocaleDateString("en-NG", { day: "2-digit", month: "short", year: "numeric" })}
                   </TableCell>
-                  <TableCell className="text-right">
+                  <TableCell className="text-right space-x-1">
+                    <Button asChild size="sm" variant="ghost"><Link to="/receipt">View</Link></Button>
                     <Button size="sm" variant="ghost" className="text-destructive hover:text-destructive" onClick={() => deleteRow(r.id)}>Delete</Button>
                   </TableCell>
                 </TableRow>
@@ -599,6 +600,401 @@ function SettingsPanel() {
           <Button onClick={save} disabled={saving || loading} className="bg-primary text-primary-foreground">
             {saving ? "Saving…" : "Save bank details"}
           </Button>
+        </div>
+      </Card>
+    </div>
+  );
+}
+
+// ============================================================================
+// SPONSORSHIPS PANEL
+// ============================================================================
+type Sponsorship = {
+  id: string;
+  full_name: string;
+  company: string | null;
+  amount: number | null;
+  message: string | null;
+  contact_email: string | null;
+  contact_phone: string | null;
+  logo_path: string | null;
+  brochure_path: string | null;
+  status: "new" | "contacted" | "confirmed" | "declined";
+  created_at: string;
+};
+
+function SponsorshipsPanel() {
+  const [rows, setRows] = useState<Sponsorship[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => { void load(); }, []);
+
+  async function load() {
+    setLoading(true);
+    const { data, error } = await supabase
+      .from("sponsorships")
+      .select("*")
+      .order("created_at", { ascending: false });
+    setLoading(false);
+    if (error) return toast.error(error.message);
+    setRows((data as Sponsorship[]) ?? []);
+  }
+
+  async function setStatus(id: string, status: Sponsorship["status"]) {
+    const { error } = await supabase.from("sponsorships").update({ status }).eq("id", id);
+    if (error) return toast.error(error.message);
+    setRows((r) => r.map((x) => (x.id === id ? { ...x, status } : x)));
+    toast.success("Updated");
+  }
+
+  async function openSigned(path: string) {
+    const { data, error } = await supabase.storage.from("sponsor-files").createSignedUrl(path, 60 * 10);
+    if (error || !data?.signedUrl) return toast.error(error?.message || "Could not generate link");
+    window.open(data.signedUrl, "_blank", "noopener");
+  }
+
+  async function remove(id: string) {
+    if (!confirm("Delete this sponsorship enquiry?")) return;
+    const { error } = await supabase.from("sponsorships").delete().eq("id", id);
+    if (error) return toast.error(error.message);
+    setRows((r) => r.filter((x) => x.id !== id));
+    toast.success("Deleted");
+  }
+
+  return (
+    <div>
+      <h2 className="font-display text-2xl font-bold text-primary mb-4">Sponsorship enquiries</h2>
+      <Card className="overflow-hidden">
+        <div className="overflow-x-auto">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>When</TableHead>
+                <TableHead>Sponsor</TableHead>
+                <TableHead>Contact</TableHead>
+                <TableHead>Amount</TableHead>
+                <TableHead>Files</TableHead>
+                <TableHead>Status</TableHead>
+                <TableHead className="text-right">Actions</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {rows.length === 0 && (
+                <TableRow><TableCell colSpan={7} className="text-center text-muted-foreground py-12">{loading ? "Loading…" : "No enquiries yet."}</TableCell></TableRow>
+              )}
+              {rows.map((r) => (
+                <TableRow key={r.id}>
+                  <TableCell className="text-xs text-muted-foreground">{new Date(r.created_at).toLocaleString()}</TableCell>
+                  <TableCell>
+                    <div className="font-medium">{r.full_name}</div>
+                    {r.company && <div className="text-xs text-muted-foreground">{r.company}</div>}
+                    {r.message && <div className="text-xs text-muted-foreground italic mt-1 max-w-xs line-clamp-2" title={r.message}>{r.message}</div>}
+                  </TableCell>
+                  <TableCell>
+                    <div className="text-sm">{r.contact_phone}</div>
+                    {r.contact_email && <div className="text-xs text-muted-foreground">{r.contact_email}</div>}
+                  </TableCell>
+                  <TableCell>{r.amount ? formatNGN(r.amount) : "—"}</TableCell>
+                  <TableCell className="space-x-1">
+                    {r.logo_path && <Button size="sm" variant="ghost" onClick={() => openSigned(r.logo_path!)}>Logo</Button>}
+                    {r.brochure_path && <Button size="sm" variant="ghost" onClick={() => openSigned(r.brochure_path!)}>Brochure</Button>}
+                    {!r.logo_path && !r.brochure_path && <span className="text-xs text-muted-foreground">—</span>}
+                  </TableCell>
+                  <TableCell>
+                    <Select value={r.status} onValueChange={(v) => setStatus(r.id, v as Sponsorship["status"])}>
+                      <SelectTrigger className="h-8 w-32"><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="new">New</SelectItem>
+                        <SelectItem value="contacted">Contacted</SelectItem>
+                        <SelectItem value="confirmed">Confirmed</SelectItem>
+                        <SelectItem value="declined">Declined</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </TableCell>
+                  <TableCell className="text-right">
+                    <Button size="sm" variant="ghost" className="text-destructive" onClick={() => remove(r.id)}>Delete</Button>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </div>
+      </Card>
+    </div>
+  );
+}
+
+// ============================================================================
+// RAFFLE PANEL
+// ============================================================================
+type RaffleSale = {
+  id: string;
+  buyer_name: string;
+  buyer_phone: string;
+  buyer_email: string | null;
+  pack: "single" | "pack20";
+  qty: number;
+  amount: number;
+  payment_status: "pending" | "paid" | "pay_at_venue" | "cancelled";
+  reference: string | null;
+  notes: string | null;
+  created_at: string;
+};
+
+function RafflePanel() {
+  const [rows, setRows] = useState<RaffleSale[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [name, setName] = useState("");
+  const [phone, setPhone] = useState("");
+  const [pack, setPack] = useState<"single" | "pack20">("single");
+  const [qty, setQty] = useState(1);
+
+  useEffect(() => { void load(); }, []);
+
+  async function load() {
+    setLoading(true);
+    const { data, error } = await supabase.from("raffle_sales").select("*").order("created_at", { ascending: false });
+    setLoading(false);
+    if (error) return toast.error(error.message);
+    setRows((data as RaffleSale[]) ?? []);
+  }
+
+  const unitPrice = pack === "single" ? 500 : 5000;
+  const amount = unitPrice * qty;
+
+  async function add() {
+    if (!name.trim() || !phone.trim()) return toast.error("Name and phone required");
+    const ref = `RAF-${Date.now().toString(36).toUpperCase()}`;
+    const { error } = await supabase.from("raffle_sales").insert({
+      buyer_name: name.trim(), buyer_phone: phone.trim(),
+      pack, qty, amount, reference: ref, payment_status: "paid",
+    });
+    if (error) return toast.error(error.message);
+    setName(""); setPhone(""); setQty(1);
+    void load();
+    toast.success(`Recorded · ${ref}`);
+  }
+
+  async function setStatus(id: string, status: RaffleSale["payment_status"]) {
+    const { error } = await supabase.from("raffle_sales").update({ payment_status: status }).eq("id", id);
+    if (error) return toast.error(error.message);
+    setRows((r) => r.map((x) => (x.id === id ? { ...x, payment_status: status } : x)));
+  }
+
+  async function remove(id: string) {
+    if (!confirm("Delete this raffle sale?")) return;
+    const { error } = await supabase.from("raffle_sales").delete().eq("id", id);
+    if (error) return toast.error(error.message);
+    setRows((r) => r.filter((x) => x.id !== id));
+  }
+
+  const totals = useMemo(() => {
+    const paid = rows.filter((r) => r.payment_status === "paid");
+    return { tickets: paid.reduce((s, r) => s + r.qty * (r.pack === "pack20" ? 20 : 1), 0), revenue: paid.reduce((s, r) => s + r.amount, 0) };
+  }, [rows]);
+
+  return (
+    <div>
+      <h2 className="font-display text-2xl font-bold text-primary mb-1">Raffle ticket sales</h2>
+      <p className="text-sm text-muted-foreground mb-4">Single ticket: ₦500 · Pack of 20: ₦5,000</p>
+
+      <div className="grid gap-4 sm:grid-cols-2 mb-4">
+        <StatCard icon={<Wallet />} label="Tickets sold (paid)" value={String(totals.tickets)} />
+        <StatCard icon={<Wallet />} label="Revenue" value={formatNGN(totals.revenue)} />
+      </div>
+
+      <Card className="p-4 mb-4 grid gap-3 md:grid-cols-[1fr_1fr_140px_100px_auto]">
+        <Input placeholder="Buyer name" value={name} onChange={(e) => setName(e.target.value)} />
+        <Input placeholder="Phone" value={phone} onChange={(e) => setPhone(e.target.value)} />
+        <Select value={pack} onValueChange={(v) => setPack(v as "single" | "pack20")}>
+          <SelectTrigger><SelectValue /></SelectTrigger>
+          <SelectContent>
+            <SelectItem value="single">Single (₦500)</SelectItem>
+            <SelectItem value="pack20">Pack of 20 (₦5,000)</SelectItem>
+          </SelectContent>
+        </Select>
+        <Input type="number" min={1} value={qty} onChange={(e) => setQty(parseInt(e.target.value) || 1)} />
+        <Button onClick={add} className="bg-primary text-primary-foreground"><Plus className="size-4 mr-1" /> Add · {formatNGN(amount)}</Button>
+      </Card>
+
+      <Card className="overflow-hidden">
+        <div className="overflow-x-auto">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>When</TableHead>
+                <TableHead>Buyer</TableHead>
+                <TableHead>Pack</TableHead>
+                <TableHead>Qty</TableHead>
+                <TableHead>Amount</TableHead>
+                <TableHead>Reference</TableHead>
+                <TableHead>Status</TableHead>
+                <TableHead className="text-right">Actions</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {rows.length === 0 && (
+                <TableRow><TableCell colSpan={8} className="text-center text-muted-foreground py-12">{loading ? "Loading…" : "No sales recorded yet."}</TableCell></TableRow>
+              )}
+              {rows.map((r) => (
+                <TableRow key={r.id}>
+                  <TableCell className="text-xs text-muted-foreground">{new Date(r.created_at).toLocaleString()}</TableCell>
+                  <TableCell><div className="font-medium">{r.buyer_name}</div><div className="text-xs text-muted-foreground">{r.buyer_phone}</div></TableCell>
+                  <TableCell>{r.pack === "pack20" ? "Pack of 20" : "Single"}</TableCell>
+                  <TableCell>{r.qty}</TableCell>
+                  <TableCell>{formatNGN(r.amount)}</TableCell>
+                  <TableCell className="font-mono text-xs">{r.reference}</TableCell>
+                  <TableCell>
+                    <Select value={r.payment_status} onValueChange={(v) => setStatus(r.id, v as RaffleSale["payment_status"])}>
+                      <SelectTrigger className="h-8 w-32"><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="pending">Pending</SelectItem>
+                        <SelectItem value="paid">Paid</SelectItem>
+                        <SelectItem value="cancelled">Cancelled</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </TableCell>
+                  <TableCell className="text-right">
+                    <Button size="sm" variant="ghost" className="text-destructive" onClick={() => remove(r.id)}>Delete</Button>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </div>
+      </Card>
+    </div>
+  );
+}
+
+// ============================================================================
+// AWARDS PANEL
+// ============================================================================
+type Award = {
+  id: string;
+  full_name: string;
+  citation: string | null;
+  photo_url: string | null;
+  year: number | null;
+  sort_order: number;
+};
+
+function AwardsPanel() {
+  const [rows, setRows] = useState<Award[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [name, setName] = useState("");
+  const [citation, setCitation] = useState("");
+  const [year, setYear] = useState<number>(new Date().getFullYear());
+  const [sortOrder, setSortOrder] = useState(0);
+  const [photoUrl, setPhotoUrl] = useState("");
+  const [uploading, setUploading] = useState(false);
+
+  useEffect(() => { void load(); }, []);
+
+  async function load() {
+    setLoading(true);
+    const { data, error } = await supabase.from("awards").select("*").order("sort_order", { ascending: true });
+    setLoading(false);
+    if (error) return toast.error(error.message);
+    setRows((data as Award[]) ?? []);
+  }
+
+  async function uploadPhoto(file: File) {
+    setUploading(true);
+    const ext = file.name.split(".").pop() || "jpg";
+    const path = `awards/${crypto.randomUUID()}.${ext}`;
+    const { error } = await supabase.storage.from("member-photos").upload(path, file, { upsert: false });
+    if (error) { setUploading(false); return toast.error(error.message); }
+    const { data } = supabase.storage.from("member-photos").getPublicUrl(path);
+    setPhotoUrl(data.publicUrl);
+    setUploading(false);
+    toast.success("Photo uploaded");
+  }
+
+  async function add() {
+    if (!name.trim()) return toast.error("Name required");
+    const { error } = await supabase.from("awards").insert({
+      full_name: name.trim(),
+      citation: citation.trim() || null,
+      photo_url: photoUrl || null,
+      year: year || null,
+      sort_order: sortOrder || 0,
+    });
+    if (error) return toast.error(error.message);
+    setName(""); setCitation(""); setPhotoUrl(""); setSortOrder(0);
+    void load();
+    toast.success("Awardee added");
+  }
+
+  async function remove(id: string) {
+    if (!confirm("Remove this awardee?")) return;
+    const { error } = await supabase.from("awards").delete().eq("id", id);
+    if (error) return toast.error(error.message);
+    setRows((r) => r.filter((x) => x.id !== id));
+  }
+
+  return (
+    <div>
+      <h2 className="font-display text-2xl font-bold text-primary mb-1">Awards &amp; Honourees</h2>
+      <p className="text-sm text-muted-foreground mb-4">
+        Awardees appear on the homepage Awards section. Display order controls the order shown (lower = first).
+      </p>
+
+      <Card className="p-4 mb-4 grid gap-3">
+        <div className="grid gap-3 md:grid-cols-2">
+          <Input placeholder="Awardee full name" value={name} onChange={(e) => setName(e.target.value)} />
+          <div className="flex items-center gap-2">
+            {photoUrl && <img src={photoUrl} alt="" className="size-10 rounded-full object-cover" />}
+            <Label htmlFor="awphoto" className="cursor-pointer inline-flex items-center gap-2 rounded-md border bg-background px-3 py-2 text-sm hover:bg-accent">
+              <Upload className="size-4" /> {uploading ? "Uploading…" : photoUrl ? "Replace photo" : "Upload photo"}
+            </Label>
+            <input id="awphoto" type="file" accept="image/*" className="sr-only"
+              onChange={(e) => { const f = e.target.files?.[0]; if (f) void uploadPhoto(f); }} />
+          </div>
+        </div>
+        <Textarea rows={2} placeholder="Citation (why they're being honoured)" value={citation} onChange={(e) => setCitation(e.target.value)} />
+        <div className="grid gap-3 md:grid-cols-3">
+          <div>
+            <Label className="text-xs">Year</Label>
+            <Input type="number" value={year} onChange={(e) => setYear(parseInt(e.target.value) || new Date().getFullYear())} />
+          </div>
+          <div>
+            <Label className="text-xs">Display order (lower = first)</Label>
+            <Input type="number" value={sortOrder} onChange={(e) => setSortOrder(parseInt(e.target.value) || 0)} />
+          </div>
+          <div className="flex items-end"><Button onClick={add} className="bg-primary text-primary-foreground w-full"><Plus className="size-4 mr-1" /> Add awardee</Button></div>
+        </div>
+      </Card>
+
+      <Card className="overflow-hidden">
+        <div className="overflow-x-auto">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Photo</TableHead>
+                <TableHead>Name</TableHead>
+                <TableHead>Year</TableHead>
+                <TableHead>Citation</TableHead>
+                <TableHead>Order</TableHead>
+                <TableHead className="text-right">Actions</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {rows.length === 0 && (
+                <TableRow><TableCell colSpan={6} className="text-center text-muted-foreground py-12">{loading ? "Loading…" : "No awardees yet."}</TableCell></TableRow>
+              )}
+              {rows.map((a) => (
+                <TableRow key={a.id}>
+                  <TableCell>{a.photo_url ? <img src={a.photo_url} alt="" className="size-10 rounded-full object-cover" /> : <div className="size-10 rounded-full bg-secondary" />}</TableCell>
+                  <TableCell className="font-medium">{a.full_name}</TableCell>
+                  <TableCell>{a.year ?? "—"}</TableCell>
+                  <TableCell className="max-w-sm text-xs text-muted-foreground line-clamp-2">{a.citation ?? "—"}</TableCell>
+                  <TableCell>{a.sort_order}</TableCell>
+                  <TableCell className="text-right"><Button size="sm" variant="ghost" className="text-destructive" onClick={() => remove(a.id)}><Trash2 className="size-4" /></Button></TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
         </div>
       </Card>
     </div>

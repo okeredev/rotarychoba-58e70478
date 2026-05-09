@@ -31,7 +31,7 @@ export const Route = createFileRoute("/register")({
 const formSchema = z.object({
   title: z.string().trim().max(20).optional().or(z.literal("")),
   full_name: z.string().trim().min(2, "Enter your full name").max(120),
-  email: z.string().trim().email("Enter a valid email").max(200),
+  email: z.string().trim().email("Enter a valid email").max(200).optional().or(z.literal("")),
   phone: z.string().trim().min(6, "Enter a valid phone").max(30),
   occupation: z.string().trim().max(120).optional().or(z.literal("")),
   position: z.string().trim().max(120).optional().or(z.literal("")),
@@ -108,7 +108,7 @@ function Register() {
     const payload = {
       title: d.title || null,
       full_name: d.full_name,
-      email: d.email,
+      email: d.email || null,
       phone: d.phone,
       occupation: d.occupation || null,
       position: d.position || null,
@@ -145,7 +145,7 @@ function Register() {
       id: newId,
       tier: selectedTier,
       full_name: d.full_name,
-      email: d.email,
+      email: d.email || "",
       phone: d.phone,
       amount: tierData.amount,
       guests_count: d.guests_count,
@@ -215,7 +215,10 @@ function Register() {
               <Field id="full_name" label="Full name *" required placeholder="Enter your full name" />
             </div>
             <div className="grid gap-5 md:grid-cols-2">
-              <Field id="email" type="email" label="Email *" required placeholder="you@example.com" />
+              <div>
+                <Field id="email" type="email" label="Email (optional)" placeholder="you@example.com" />
+                <p className="mt-1 text-xs text-muted-foreground">Recommended — used together with your phone to recover your slip.</p>
+              </div>
               <Field id="phone" type="tel" label="Phone *" required placeholder="+234 800 000 0000" />
             </div>
             <div>
@@ -427,6 +430,15 @@ function SuccessView({ data, bank, onReset }: { data: SuccessData; bank: BankInf
         </Card>
 
         <div className="mt-6 flex flex-wrap justify-center gap-3 print:hidden">
+          <Button
+            onClick={() => {
+              navigator.clipboard.writeText(reference);
+              toast.success(`Copied reference ${reference}`);
+            }}
+            className="bg-gold text-gold-foreground hover:bg-gold/90"
+          >
+            <Copy className="size-4 mr-2" /> Copy reference {reference}
+          </Button>
           <Button onClick={() => window.print()} className="bg-primary text-primary-foreground">
             <Printer className="size-4 mr-2" /> Print / Save as PDF
           </Button>
@@ -441,8 +453,8 @@ function SuccessView({ data, bank, onReset }: { data: SuccessData; bank: BankInf
           </Button>
         </div>
         <p className="mt-4 text-center text-xs text-muted-foreground print:hidden">
-          Your reference is <strong className="font-mono">{reference}</strong>. Save it — you'll
-          need it (with your email) to download your final slip once payment is approved.
+          Your reference is <strong className="font-mono">{reference}</strong>. Save it — or recover your slip later
+          using your <strong>phone number</strong> on the My slip page.
         </p>
       </div>
     </div>

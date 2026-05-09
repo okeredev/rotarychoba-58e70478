@@ -108,7 +108,7 @@ function Register() {
     const payload = {
       title: d.title || null,
       full_name: d.full_name,
-      email: d.email,
+      email: d.email || null,
       phone: d.phone,
       occupation: d.occupation || null,
       position: d.position || null,

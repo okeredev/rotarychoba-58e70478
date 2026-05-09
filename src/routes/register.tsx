@@ -145,7 +145,7 @@ function Register() {
       id: newId,
       tier: selectedTier,
       full_name: d.full_name,
-      email: d.email,
+      email: d.email || "",
       phone: d.phone,
       amount: tierData.amount,
       guests_count: d.guests_count,

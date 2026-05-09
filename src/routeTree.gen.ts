@@ -9,12 +9,18 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as SponsorRouteImport } from './routes/sponsor'
 import { Route as RegisterRouteImport } from './routes/register'
 import { Route as ReceiptRouteImport } from './routes/receipt'
 import { Route as AdminRouteImport } from './routes/admin'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AdminLoginRouteImport } from './routes/admin_.login'
 
+const SponsorRoute = SponsorRouteImport.update({
+  id: '/sponsor',
+  path: '/sponsor',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const RegisterRoute = RegisterRouteImport.update({
   id: '/register',
   path: '/register',
@@ -46,6 +52,7 @@ export interface FileRoutesByFullPath {
   '/admin': typeof AdminRoute
   '/receipt': typeof ReceiptRoute
   '/register': typeof RegisterRoute
+  '/sponsor': typeof SponsorRoute
   '/admin/login': typeof AdminLoginRoute
 }
 export interface FileRoutesByTo {
@@ -53,6 +60,7 @@ export interface FileRoutesByTo {
   '/admin': typeof AdminRoute
   '/receipt': typeof ReceiptRoute
   '/register': typeof RegisterRoute
+  '/sponsor': typeof SponsorRoute
   '/admin/login': typeof AdminLoginRoute
 }
 export interface FileRoutesById {
@@ -61,14 +69,28 @@ export interface FileRoutesById {
   '/admin': typeof AdminRoute
   '/receipt': typeof ReceiptRoute
   '/register': typeof RegisterRoute
+  '/sponsor': typeof SponsorRoute
   '/admin_/login': typeof AdminLoginRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/admin' | '/receipt' | '/register' | '/admin/login'
+  fullPaths:
+    | '/'
+    | '/admin'
+    | '/receipt'
+    | '/register'
+    | '/sponsor'
+    | '/admin/login'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/admin' | '/receipt' | '/register' | '/admin/login'
-  id: '__root__' | '/' | '/admin' | '/receipt' | '/register' | '/admin_/login'
+  to: '/' | '/admin' | '/receipt' | '/register' | '/sponsor' | '/admin/login'
+  id:
+    | '__root__'
+    | '/'
+    | '/admin'
+    | '/receipt'
+    | '/register'
+    | '/sponsor'
+    | '/admin_/login'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -76,11 +98,19 @@ export interface RootRouteChildren {
   AdminRoute: typeof AdminRoute
   ReceiptRoute: typeof ReceiptRoute
   RegisterRoute: typeof RegisterRoute
+  SponsorRoute: typeof SponsorRoute
   AdminLoginRoute: typeof AdminLoginRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/sponsor': {
+      id: '/sponsor'
+      path: '/sponsor'
+      fullPath: '/sponsor'
+      preLoaderRoute: typeof SponsorRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/register': {
       id: '/register'
       path: '/register'
@@ -124,6 +154,7 @@ const rootRouteChildren: RootRouteChildren = {
   AdminRoute: AdminRoute,
   ReceiptRoute: ReceiptRoute,
   RegisterRoute: RegisterRoute,
+  SponsorRoute: SponsorRoute,
   AdminLoginRoute: AdminLoginRoute,
 }
 export const routeTree = rootRouteImport

@@ -289,6 +289,53 @@ function Landing() {
         </div>
       </section>
 
+      {/* Awards & Recognition */}
+      <section id="awards" className="container mx-auto px-6 py-20">
+        <div className="text-center max-w-2xl mx-auto mb-12">
+          <p className="text-xs uppercase tracking-[0.25em] text-gold font-semibold">Recognition</p>
+          <h2 className="font-display text-4xl font-bold text-primary mt-3">Awards &amp; Honourees</h2>
+          <p className="mt-3 text-muted-foreground">
+            Celebrating individuals whose service has uplifted our club and community.
+          </p>
+        </div>
+
+        <Card className="max-w-3xl mx-auto p-6 md:p-8 border-2 border-gold/30 bg-secondary/30 mb-12">
+          <p className="text-xs uppercase tracking-[0.25em] text-gold font-semibold">Eligibility</p>
+          <h3 className="font-display text-xl font-bold text-primary mt-2">Rules for the award</h3>
+          <ul className="mt-4 grid gap-2 text-sm">
+            {AWARD_RULES.map((r) => (
+              <li key={r} className="flex items-start gap-2">
+                <Check className="size-4 text-gold mt-0.5 shrink-0" />
+                <span>{r}</span>
+              </li>
+            ))}
+          </ul>
+        </Card>
+
+        {awards.length === 0 ? (
+          <p className="text-center text-muted-foreground italic">Awardees will be announced soon.</p>
+        ) : (
+          <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+            {awards.map((a) => (
+              <Card key={a.id} className="group overflow-hidden p-0 border-2 border-gold/40 bg-card transition hover:-translate-y-1 hover:shadow-[var(--shadow-elegant)]">
+                <div className="aspect-square w-full bg-secondary flex items-center justify-center overflow-hidden">
+                  {a.photo_url ? (
+                    <img src={a.photo_url} alt={a.full_name} className="w-full h-full object-cover group-hover:scale-105 transition duration-500" loading="lazy" />
+                  ) : (
+                    <User className="size-20 text-muted-foreground/40" />
+                  )}
+                </div>
+                <div className="p-5">
+                  <p className="font-display text-lg font-bold text-primary leading-tight">{a.full_name}</p>
+                  {a.year && <p className="text-xs uppercase tracking-widest text-gold font-semibold mt-1">Honoured · {a.year}</p>}
+                  {a.citation && <p className="mt-3 text-sm text-muted-foreground line-clamp-4">{a.citation}</p>}
+                </div>
+              </Card>
+            ))}
+          </div>
+        )}
+      </section>
+
       {/* Footer */}
       <footer className="border-t border-border bg-sidebar text-sidebar-foreground">
         <div className="container mx-auto px-6 py-10 text-center text-sm">
@@ -308,8 +355,12 @@ function Landing() {
             <Link to="/register" className="text-sidebar-foreground/70 hover:text-gold">Register</Link>
             <Link to="/sponsor" className="text-sidebar-foreground/70 hover:text-gold">Sponsor</Link>
             <Link to="/receipt" className="text-sidebar-foreground/70 hover:text-gold">My slip</Link>
+            <a href="#awards" className="text-sidebar-foreground/70 hover:text-gold">Awards</a>
             <Link to="/admin/login" className="text-sidebar-foreground/70 hover:text-gold">Admin</Link>
           </div>
+          <p className="mt-6 text-[11px] uppercase tracking-widest text-sidebar-foreground/50">
+            Website by <span className="text-gold font-semibold">webserve</span>
+          </p>
         </div>
       </footer>
     </div>

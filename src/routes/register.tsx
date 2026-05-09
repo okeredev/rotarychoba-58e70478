@@ -215,7 +215,10 @@ function Register() {
               <Field id="full_name" label="Full name *" required placeholder="Enter your full name" />
             </div>
             <div className="grid gap-5 md:grid-cols-2">
-              <Field id="email" type="email" label="Email *" required placeholder="you@example.com" />
+              <div>
+                <Field id="email" type="email" label="Email (optional)" placeholder="you@example.com" />
+                <p className="mt-1 text-xs text-muted-foreground">Recommended — used together with your phone to recover your slip.</p>
+              </div>
               <Field id="phone" type="tel" label="Phone *" required placeholder="+234 800 000 0000" />
             </div>
             <div>

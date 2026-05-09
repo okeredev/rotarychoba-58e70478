@@ -20,7 +20,7 @@ import { Badge } from "@/components/ui/badge";
 import { TIERS, formatNGN } from "@/lib/tiers";
 import { fetchBankInfo, saveBankInfo, DEFAULT_BANK, type BankInfo } from "@/lib/settings";
 import { toast } from "sonner";
-import { LogOut, Search, Users, Wallet, Crown, RefreshCw, Plus, Trash2, Pencil, Upload } from "lucide-react";
+import { LogOut, Search, Users, Wallet, Crown, RefreshCw, Plus, Trash2, Pencil, Upload, Download } from "lucide-react";
 import type { Database } from "@/integrations/supabase/types";
 
 type Registration = Database["public"]["Tables"]["registrations"]["Row"];
@@ -160,6 +160,41 @@ function RegistrationsPanel() {
     toast.success("Updated");
   }
 
+  function exportCsv() {
+    if (filtered.length === 0) {
+      toast.error("Nothing to export");
+      return;
+    }
+    const headers = [
+      "Registered", "Title", "Full Name", "Email", "Phone", "Position", "Organization",
+      "Rotary Club", "Address", "Tier", "Amount (NGN)", "Guests", "Payment Method",
+      "Payment Status", "Payment Reference", "Payment Proof URL", "Notes",
+    ];
+    const esc = (v: unknown) => {
+      const s = v === null || v === undefined ? "" : String(v);
+      return /[",\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
+    };
+    const lines = [headers.join(",")];
+    for (const r of filtered) {
+      lines.push([
+        new Date(r.created_at).toISOString(),
+        r.title, r.full_name, r.email, r.phone, r.position, r.organization,
+        r.rotary_club, r.address, r.tier, r.amount, r.guests_count, r.payment_method,
+        r.payment_status, r.payment_reference, r.payment_proof_url, r.notes,
+      ].map(esc).join(","));
+    }
+    const blob = new Blob(["\ufeff" + lines.join("\n")], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `registrations-${new Date().toISOString().slice(0, 10)}.csv`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    toast.success(`Exported ${filtered.length} row${filtered.length > 1 ? "s" : ""}`);
+  }
+
   async function deleteRow(id: string) {
     if (!confirm("Delete this registration? This cannot be undone.")) return;
     const { error } = await supabase.from("registrations").delete().eq("id", id);
@@ -204,6 +239,9 @@ function RegistrationsPanel() {
         </Select>
         <Button variant="outline" onClick={loadRows} disabled={loading}>
           <RefreshCw className={`size-4 mr-1 ${loading ? "animate-spin" : ""}`} /> Refresh
+        </Button>
+        <Button onClick={exportCsv} disabled={loading || filtered.length === 0} className="bg-primary text-primary-foreground hover:bg-primary/90">
+          <Download className="size-4 mr-1" /> Export CSV
         </Button>
       </Card>
 

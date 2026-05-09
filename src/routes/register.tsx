@@ -31,7 +31,7 @@ export const Route = createFileRoute("/register")({
 const formSchema = z.object({
   title: z.string().trim().max(20).optional().or(z.literal("")),
   full_name: z.string().trim().min(2, "Enter your full name").max(120),
-  email: z.string().trim().email("Enter a valid email").max(200),
+  email: z.string().trim().email("Enter a valid email").max(200).optional().or(z.literal("")),
   phone: z.string().trim().min(6, "Enter a valid phone").max(30),
   occupation: z.string().trim().max(120).optional().or(z.literal("")),
   position: z.string().trim().max(120).optional().or(z.literal("")),

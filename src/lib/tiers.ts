@@ -10,7 +10,7 @@ export const TIERS: Array<{
 }> = [
   {
     key: "standard",
-    name: "Standard",
+    name: "Regular",
     amount: 10000,
     tagline: "General attendance",
     perks: ["Access to the ceremony", "Cocktail reception"],
@@ -18,7 +18,7 @@ export const TIERS: Array<{
   },
   {
     key: "premium",
-    name: "Premium",
+    name: "Gold",
     amount: 20000,
     tagline: "Attendance + event brochure",
     perks: ["Access to the ceremony", "Official event brochure", "Reserved seating"],
@@ -26,7 +26,7 @@ export const TIERS: Array<{
   },
   {
     key: "vip",
-    name: "VIP",
+    name: "Platinum",
     amount: 50000,
     tagline: "The full Rotary experience",
     perks: [
@@ -51,6 +51,6 @@ export const VIP_BANK = {
 export const EVENT = {
   name: "16th Installation Ceremony",
   club: "Rotary Club of Choba-Uniport",
-  date: "Friday, 3rd July 2026",
-  venue: "Helena Haven Hotel",
+  date: "Friday, 3rd July 2026 · 3:00pm prompt",
+  venue: "Helena Haven Hotel, East-West Road, Choba, Rivers State",
 };

@@ -9,6 +9,7 @@ import { TIERS, formatNGN, EVENT, type TierKey } from "@/lib/tiers";
 import { toast } from "sonner";
 import { ArrowLeft, Calendar, Check, MapPin, Printer, Search, Clock } from "lucide-react";
 import rotaryWheel from "@/assets/rotary-wheel.png";
+import { ReceiptWatermark, ReceiptVerifyBlock, RECEIPT_LOCKED_CLASS } from "@/components/receipt-security";
 
 export const Route = createFileRoute("/receipt")({
   component: ReceiptLookup,

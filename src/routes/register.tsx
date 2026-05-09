@@ -294,7 +294,7 @@ function PaymentOption({ selected, onClick, title, description }: {
   );
 }
 
-function SuccessView({ data, bank }: { data: SuccessData; bank: BankInfo }) {
+function SuccessView({ data, bank, onReset }: { data: SuccessData; bank: BankInfo; onReset: () => void }) {
   const reference = data.id.slice(0, 8).toUpperCase();
   const tierName = TIERS.find((t) => t.key === data.tier)?.name ?? data.tier;
   const totalSeats = 1 + data.guests_count;

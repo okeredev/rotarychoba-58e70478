@@ -230,7 +230,7 @@ function Register() {
             </div>
             <div className="grid gap-5 md:grid-cols-2">
               <Field id="organization" label="Organization / Company" placeholder="e.g. ABC Holdings Ltd." />
-              <Field id="rotary_club" label="Rotary club (if Rotarian)" placeholder="e.g. Rotary Club of Port Harcourt" />
+              <Field id="rotary_club" label="Rotary/Rotract club (if applicable)" placeholder="e.g. Rotary Club of Port Harcourt" />
             </div>
 
             <SectionHeading>Attendance</SectionHeading>

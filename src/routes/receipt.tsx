@@ -232,7 +232,7 @@ function SlipView({ reg }: { reg: Reg }) {
             <div className="grid grid-cols-2 gap-4 text-sm">
               <Detail label="Attendee" value={fullName} />
               <Detail label="Tier" value={tierName} />
-              <Detail label="Email" value={reg.email} />
+              <Detail label="Email" value={reg.email ?? "—"} />
               <Detail label="Phone" value={reg.phone} />
               <Detail label="Seats" value={`${totalSeats}`} />
               <Detail label="Status" value="PAID" />

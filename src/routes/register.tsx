@@ -317,7 +317,8 @@ function SuccessView({ data, bank, onReset }: { data: SuccessData; bank: BankInf
         </div>
 
         {/* Receipt — also the printable area */}
-        <Card id="receipt" className="p-0 overflow-hidden border-2 border-primary/20 print:border-0 print:shadow-none">
+        <Card id="receipt" className={`relative p-0 overflow-hidden border-2 border-primary/20 print:border-0 print:shadow-none ${RECEIPT_LOCKED_CLASS}`} onContextMenu={(e) => e.preventDefault()}>
+          <ReceiptWatermark label={`Provisional · ${reference}`} />
           <div className="p-6 md:p-8" style={{ background: "var(--gradient-royal)" }}>
             <div className="flex items-center justify-between text-white">
               <div className="flex items-center gap-3">

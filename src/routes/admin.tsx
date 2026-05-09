@@ -307,7 +307,8 @@ function RegistrationsPanel() {
                   <TableCell className="text-sm text-muted-foreground">
                     {new Date(r.created_at).toLocaleDateString("en-NG", { day: "2-digit", month: "short", year: "numeric" })}
                   </TableCell>
-                  <TableCell className="text-right">
+                  <TableCell className="text-right space-x-1">
+                    <Button asChild size="sm" variant="ghost"><Link to="/receipt">View</Link></Button>
                     <Button size="sm" variant="ghost" className="text-destructive hover:text-destructive" onClick={() => deleteRow(r.id)}>Delete</Button>
                   </TableCell>
                 </TableRow>

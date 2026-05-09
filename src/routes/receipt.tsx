@@ -9,6 +9,7 @@ import { TIERS, formatNGN, EVENT, type TierKey } from "@/lib/tiers";
 import { toast } from "sonner";
 import { ArrowLeft, Calendar, Check, MapPin, Printer, Search, Clock } from "lucide-react";
 import rotaryWheel from "@/assets/rotary-wheel.png";
+import { ReceiptWatermark, ReceiptVerifyBlock, RECEIPT_LOCKED_CLASS } from "@/components/receipt-security";
 
 export const Route = createFileRoute("/receipt")({
   component: ReceiptLookup,
@@ -158,8 +159,9 @@ function SlipView({ reg }: { reg: Reg }) {
           </p>
         </div>
 
-        <Card id="receipt" className="p-0 overflow-hidden border-2 border-primary/20 print:border-0 print:shadow-none">
-          <div className="p-6 md:p-8" style={{ background: "var(--gradient-royal)" }}>
+        <Card id="receipt" className={`relative p-0 overflow-hidden border-2 border-primary/20 print:border-0 print:shadow-none ${RECEIPT_LOCKED_CLASS}`} onContextMenu={(e) => e.preventDefault()}>
+          <ReceiptWatermark label={`Official · ${reference}`} />
+          <div className="relative z-10 p-6 md:p-8" style={{ background: "var(--gradient-royal)" }}>
             <div className="flex items-center justify-between text-white">
               <div className="flex items-center gap-3">
                 <img src={rotaryWheel} alt="" className="size-12 bg-white/10 rounded-full p-1" />
@@ -182,7 +184,7 @@ function SlipView({ reg }: { reg: Reg }) {
             </div>
           </div>
 
-          <div className="p-6 md:p-8 grid gap-5">
+          <div className="relative z-10 p-6 md:p-8 grid gap-5">
             <div className="grid grid-cols-2 gap-4 text-sm">
               <Detail label="Attendee" value={fullName} />
               <Detail label="Tier" value={tierName} />
@@ -202,6 +204,13 @@ function SlipView({ reg }: { reg: Reg }) {
                 <p className="font-display text-sm font-bold text-primary">Approved</p>
               </div>
             </div>
+
+            <ReceiptVerifyBlock
+              reference={reference}
+              email={reg.email}
+              issuedAt={new Date().toLocaleDateString(undefined, { year: "numeric", month: "short", day: "numeric" })}
+              status="OFFICIAL"
+            />
 
             <div className="border-t border-dashed border-border pt-4 text-[11px] text-muted-foreground text-center">
               This slip is your entry pass. Please present it (printed or on-screen) at the door.

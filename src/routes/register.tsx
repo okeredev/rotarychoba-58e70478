@@ -15,6 +15,7 @@ import { fetchBankInfo, DEFAULT_BANK, type BankInfo } from "@/lib/settings";
 import { toast } from "sonner";
 import { ArrowLeft, Check, Copy, Printer, Calendar, MapPin, Upload, ImageIcon } from "lucide-react";
 import rotaryWheel from "@/assets/rotary-wheel.png";
+import { ReceiptWatermark, ReceiptVerifyBlock, RECEIPT_LOCKED_CLASS } from "@/components/receipt-security";
 
 const TITLES = ["Mr.", "Mrs.", "Miss", "Ms.", "Dr.", "Prof.", "Engr.", "Chief", "Hon.", "Rtn.", "PP", "PE", "DGN", "PDG"] as const;
 
@@ -316,7 +317,8 @@ function SuccessView({ data, bank, onReset }: { data: SuccessData; bank: BankInf
         </div>
 
         {/* Receipt — also the printable area */}
-        <Card id="receipt" className="p-0 overflow-hidden border-2 border-primary/20 print:border-0 print:shadow-none">
+        <Card id="receipt" className={`relative p-0 overflow-hidden border-2 border-primary/20 print:border-0 print:shadow-none ${RECEIPT_LOCKED_CLASS}`} onContextMenu={(e) => e.preventDefault()}>
+          <ReceiptWatermark label={`Provisional · ${reference}`} />
           <div className="p-6 md:p-8" style={{ background: "var(--gradient-royal)" }}>
             <div className="flex items-center justify-between text-white">
               <div className="flex items-center gap-3">
@@ -340,7 +342,7 @@ function SuccessView({ data, bank, onReset }: { data: SuccessData; bank: BankInf
             </div>
           </div>
 
-          <div className="p-6 md:p-8 grid gap-5">
+          <div className="relative z-10 p-6 md:p-8 grid gap-5">
             <div className="grid grid-cols-2 gap-4 text-sm">
               <Detail label="Attendee" value={data.full_name} />
               <Detail label="Tier" value={tierName} />
@@ -385,6 +387,13 @@ function SuccessView({ data, bank, onReset }: { data: SuccessData; bank: BankInf
                 </p>
               </div>
             )}
+
+            <ReceiptVerifyBlock
+              reference={reference}
+              email={data.email}
+              issuedAt={new Date().toLocaleDateString(undefined, { year: "numeric", month: "short", day: "numeric" })}
+              status="PROVISIONAL"
+            />
 
             <div className="border-t border-dashed border-border pt-4 text-[11px] text-muted-foreground text-center">
               This receipt is your entry pass. Please present it (printed or on-screen) at the door.

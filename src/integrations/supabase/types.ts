@@ -174,6 +174,23 @@ export type Database = {
         }
         Returns: boolean
       }
+      lookup_registration: {
+        Args: { email_input: string; ref: string }
+        Returns: {
+          amount: number
+          created_at: string
+          email: string
+          full_name: string
+          guests_count: number
+          id: string
+          payment_method: string
+          payment_proof_url: string
+          payment_status: string
+          phone: string
+          tier: string
+          title: string
+        }[]
+      }
     }
     Enums: {
       app_role: "admin" | "user"

@@ -381,9 +381,16 @@ function SuccessView({ data, bank }: { data: SuccessData; bank: BankInfo }) {
             <Printer className="size-4 mr-2" /> Print / Save as PDF
           </Button>
           <Button asChild variant="outline">
+            <Link to="/receipt">Download approved slip later</Link>
+          </Button>
+          <Button asChild variant="ghost">
             <Link to="/">Return home</Link>
           </Button>
         </div>
+        <p className="mt-4 text-center text-xs text-muted-foreground print:hidden">
+          Your reference is <strong className="font-mono">{reference}</strong>. Save it — you'll
+          need it (with your email) to download your final slip once payment is approved.
+        </p>
       </div>
     </div>
   );

@@ -251,7 +251,7 @@ function SlipView({ reg }: { reg: Reg }) {
 
             <ReceiptVerifyBlock
               reference={reference}
-              email={reg.email}
+              email={reg.email ?? reg.phone}
               issuedAt={new Date().toLocaleDateString(undefined, { year: "numeric", month: "short", day: "numeric" })}
               status="OFFICIAL"
             />

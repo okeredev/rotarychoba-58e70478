@@ -400,6 +400,9 @@ function SuccessView({ data, bank, onReset }: { data: SuccessData; bank: BankInf
           <Button asChild variant="outline">
             <Link to="/receipt">Download approved slip later</Link>
           </Button>
+          <Button variant="ghost" onClick={onReset}>
+            Start a new registration
+          </Button>
           <Button asChild variant="ghost">
             <Link to="/">Return home</Link>
           </Button>

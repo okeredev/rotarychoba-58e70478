@@ -205,6 +205,13 @@ function SlipView({ reg }: { reg: Reg }) {
               </div>
             </div>
 
+            <ReceiptVerifyBlock
+              reference={reference}
+              email={reg.email}
+              issuedAt={new Date().toLocaleDateString(undefined, { year: "numeric", month: "short", day: "numeric" })}
+              status="OFFICIAL"
+            />
+
             <div className="border-t border-dashed border-border pt-4 text-[11px] text-muted-foreground text-center">
               This slip is your entry pass. Please present it (printed or on-screen) at the door.
               <br /> Service Above Self · {EVENT.club}

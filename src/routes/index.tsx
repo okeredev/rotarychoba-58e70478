@@ -275,8 +275,19 @@ function Landing() {
             <p className="font-display text-lg">{EVENT.club}</p>
           </div>
           <p className="text-sidebar-foreground/70">
-            For enquiries, contact the secretariat. © {new Date().getFullYear()}
+            For enquiries, contact the secretariat at{" "}
+            <a href="mailto:rotarychoba.uniport@gmail.com" className="text-gold hover:underline">
+              rotarychoba.uniport@gmail.com
+            </a>
+            . © {new Date().getFullYear()}
           </p>
+          <div className="mt-4 flex flex-wrap items-center justify-center gap-x-5 gap-y-2 text-xs">
+            <Link to="/" className="text-sidebar-foreground/70 hover:text-gold">Home</Link>
+            <Link to="/register" className="text-sidebar-foreground/70 hover:text-gold">Register</Link>
+            <Link to="/sponsor" className="text-sidebar-foreground/70 hover:text-gold">Sponsor</Link>
+            <Link to="/receipt" className="text-sidebar-foreground/70 hover:text-gold">My slip</Link>
+            <Link to="/admin/login" className="text-sidebar-foreground/70 hover:text-gold">Admin</Link>
+          </div>
         </div>
       </footer>
     </div>

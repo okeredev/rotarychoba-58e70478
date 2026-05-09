@@ -50,7 +50,9 @@ function Landing() {
           </div>
           <nav className="hidden md:flex items-center gap-6 text-sm font-medium">
             <a href="#tiers" className="text-foreground/80 hover:text-primary transition">Tiers</a>
+            <a href="#president" className="text-foreground/80 hover:text-primary transition">President</a>
             <a href="#leadership" className="text-foreground/80 hover:text-primary transition">Leadership</a>
+            <Link to="/sponsor" className="text-foreground/80 hover:text-primary transition">Sponsor</Link>
             <Link to="/receipt" className="text-foreground/80 hover:text-primary transition">My slip</Link>
             <Button asChild size="sm" className="bg-primary text-primary-foreground hover:bg-primary/90">
               <Link to="/register">Register</Link>

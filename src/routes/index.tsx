@@ -124,6 +124,56 @@ function Landing() {
         </div>
       </section>
 
+      {/* Incoming President */}
+      <section id="president" className="border-b border-border bg-secondary/30">
+        <div className="container mx-auto px-6 py-20">
+          {(() => {
+            const president = incoming[0];
+            return (
+              <div className="grid gap-10 md:grid-cols-[minmax(0,1fr)_1.2fr] items-center max-w-5xl mx-auto">
+                <div className="relative">
+                  <div className="aspect-[4/5] w-full overflow-hidden rounded-2xl border-4 border-gold/40 shadow-[var(--shadow-elegant)] bg-secondary">
+                    <img
+                      src={president?.photo_url || "/president-precious.png"}
+                      alt={president?.full_name || "Incoming President"}
+                      className="w-full h-full object-cover"
+                      loading="lazy"
+                    />
+                  </div>
+                  <span
+                    className="absolute -bottom-4 left-1/2 -translate-x-1/2 rounded-full px-4 py-1.5 text-[10px] font-bold uppercase tracking-widest whitespace-nowrap"
+                    style={{ background: "var(--gradient-gold)", color: "var(--gold-foreground)", boxShadow: "var(--shadow-gold)" }}
+                  >
+                    Incoming · 2026 / 2027
+                  </span>
+                </div>
+                <div>
+                  <p className="text-xs uppercase tracking-[0.25em] text-gold font-semibold">Meet our 16th President</p>
+                  <h2 className="font-display text-4xl md:text-5xl font-bold text-primary mt-3 leading-tight">
+                    {president?.full_name || "Rtn. Ujons Precious Inemeawaji"}
+                  </h2>
+                  <p className="mt-2 text-sm uppercase tracking-widest text-muted-foreground">
+                    {president?.position || "16th President 2026"} · Rotary Club of Choba-Uniport
+                  </p>
+                  <p className="mt-5 text-base text-muted-foreground leading-relaxed">
+                    {president?.bio ||
+                      "We are honoured to welcome our incoming President as she leads the Rotary Club of Choba-Uniport into its 16th Rotary year. Her vision is rooted in Service Above Self — strengthening our impact in education, health, and community development across Rivers State."}
+                  </p>
+                  <div className="mt-7 flex flex-wrap gap-3">
+                    <Button asChild className="bg-primary text-primary-foreground hover:bg-primary/90">
+                      <Link to="/register">Attend the installation</Link>
+                    </Button>
+                    <Button asChild variant="outline" className="border-gold text-primary hover:bg-gold/10">
+                      <Link to="/sponsor">Become a sponsor</Link>
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            );
+          })()}
+        </div>
+      </section>
+
       {/* Tiers */}
       <section id="tiers" className="container mx-auto px-6 py-20">
         <div className="text-center max-w-2xl mx-auto mb-12">

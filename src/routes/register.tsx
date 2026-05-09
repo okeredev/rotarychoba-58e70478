@@ -123,7 +123,17 @@ function Register() {
       payment_status: "pending" as const,
     };
 
-    const { data, error } = await supabase.from("registrations").insert(payload).select("id").single();
+    // Generate the id client-side so we don't need a SELECT-after-INSERT
+    // (anonymous users have no SELECT policy on registrations, which would
+    // surface as "new row violates row-level security policy" on the
+    // returning step). The id is a uuid and is also used as the receipt ref.
+    const newId =
+      typeof crypto !== "undefined" && "randomUUID" in crypto
+        ? crypto.randomUUID()
+        : `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+    const { error } = await supabase
+      .from("registrations")
+      .insert({ id: newId, ...payload });
     setSubmitting(false);
 
     if (error) {
@@ -132,7 +142,7 @@ function Register() {
     }
     toast.success("Registration submitted!");
     const successData: SuccessData = {
-      id: data.id,
+      id: newId,
       tier: selectedTier,
       full_name: d.full_name,
       email: d.email,

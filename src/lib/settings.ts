@@ -7,9 +7,9 @@ export type BankInfo = {
 };
 
 export const DEFAULT_BANK: BankInfo = {
-  bank_name: "Zenith Bank",
-  account_name: "Rotary Club of Choba-Uniport",
-  account_number: "0000000000",
+  bank_name: "UBA (United Bank for Africa)",
+  account_name: "ROTARY CLUB CHOBA-UNIPORT PROJECT ACCOUNT",
+  account_number: "1022019177",
 };
 
 export async function fetchBankInfo(): Promise<BankInfo> {

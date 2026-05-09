@@ -66,8 +66,18 @@ function Register() {
   const isVip = selectedTier === "vip";
   const effectiveChoice: "pay_now" | "pay_at_venue" = isVip ? "pay_now" : paymentChoice;
 
+  // Restore the last successful registration from localStorage so a page
+  // refresh keeps the receipt visible instead of dumping the user back to the
+  // empty form.
   useEffect(() => {
     void fetchBankInfo().then(setBank);
+    if (typeof window === "undefined") return;
+    try {
+      const raw = window.localStorage.getItem("rcc:lastRegistration");
+      if (raw) setSuccess(JSON.parse(raw) as SuccessData);
+    } catch {
+      /* ignore corrupted storage */
+    }
   }, []);
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {

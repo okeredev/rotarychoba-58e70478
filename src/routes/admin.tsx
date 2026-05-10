@@ -374,6 +374,10 @@ function RegistrationsPanel() {
         open={!!detail}
         onOpenChange={(v) => { if (!v) setDetail(null); }}
         onPrint={(r) => printSlip(r)}
+        onUpdated={(updated) => {
+          setRows((rs) => rs.map((x) => (x.id === updated.id ? updated : x)));
+          setDetail(updated);
+        }}
       />
     </>
   );

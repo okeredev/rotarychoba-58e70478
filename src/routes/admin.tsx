@@ -1029,6 +1029,8 @@ type RaffleSale = {
   qty: number;
   amount: number;
   payment_status: "pending" | "paid" | "pay_at_venue" | "cancelled";
+  payment_method: "pay_now" | "pay_at_venue";
+  payment_proof_url: string | null;
   reference: string | null;
   notes: string | null;
   created_at: string;
@@ -1120,6 +1122,8 @@ function RafflePanel() {
                 <TableHead>Pack</TableHead>
                 <TableHead>Qty</TableHead>
                 <TableHead>Amount</TableHead>
+                <TableHead>Method</TableHead>
+                <TableHead>Proof</TableHead>
                 <TableHead>Reference</TableHead>
                 <TableHead>Status</TableHead>
                 <TableHead className="text-right">Actions</TableHead>
@@ -1127,7 +1131,7 @@ function RafflePanel() {
             </TableHeader>
             <TableBody>
               {rows.length === 0 && (
-                <TableRow><TableCell colSpan={8} className="text-center text-muted-foreground py-12">{loading ? "Loading…" : "No sales recorded yet."}</TableCell></TableRow>
+                <TableRow><TableCell colSpan={10} className="text-center text-muted-foreground py-12">{loading ? "Loading…" : "No sales recorded yet."}</TableCell></TableRow>
               )}
               {rows.map((r) => (
                 <TableRow key={r.id}>
@@ -1136,6 +1140,16 @@ function RafflePanel() {
                   <TableCell>{r.pack === "pack20" ? "Pack of 20" : "Single"}</TableCell>
                   <TableCell>{r.qty}</TableCell>
                   <TableCell>{formatNGN(r.amount)}</TableCell>
+                  <TableCell className="text-xs">{r.payment_method === "pay_now" ? "Transfer" : "At venue"}</TableCell>
+                  <TableCell>
+                    {r.payment_proof_url ? (
+                      <a href={r.payment_proof_url} target="_blank" rel="noreferrer" className="text-primary hover:underline inline-flex items-center gap-1 text-xs">
+                        <Eye className="size-3.5" /> View
+                      </a>
+                    ) : (
+                      <span className="text-xs text-muted-foreground">—</span>
+                    )}
+                  </TableCell>
                   <TableCell className="font-mono text-xs">{r.reference}</TableCell>
                   <TableCell>
                     <Select value={r.payment_status} onValueChange={(v) => setStatus(r.id, v as RaffleSale["payment_status"])}>

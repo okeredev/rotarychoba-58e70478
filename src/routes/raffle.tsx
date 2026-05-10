@@ -162,9 +162,19 @@ function RafflePage() {
             <div className="rounded-lg border border-border p-4 space-y-2 text-sm">
               <div className="flex justify-between"><span className="text-foreground/60">Tickets</span><span className="font-semibold">{done.qty}</span></div>
               <div className="flex justify-between"><span className="text-foreground/60">Amount</span><span className="font-semibold">₦{done.amount.toLocaleString()}</span></div>
+              <div className="flex justify-between"><span className="text-foreground/60">Payment</span><span className="font-semibold">{done.payment_method === "pay_now" ? "Pay now (transfer)" : "Pay at venue"}</span></div>
             </div>
 
-            <BankBox bank={bank} copy={copy} copied={copied} />
+            {done.payment_method === "pay_now" ? (
+              <>
+                <BankBox bank={bank} copy={copy} copied={copied} />
+                <RaffleProofUpload saleId={done.id} />
+              </>
+            ) : (
+              <div className="rounded-lg border border-dashed border-primary/40 bg-secondary/30 p-4 text-sm">
+                Bring this reference to the venue on the day of the event to pay and collect your tickets.
+              </div>
+            )}
 
             <div className="flex flex-col sm:flex-row gap-3 pt-2">
               <Button onClick={() => setDone(null)} variant="outline" className="flex-1">Buy more tickets</Button>

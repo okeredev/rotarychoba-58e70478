@@ -210,6 +210,37 @@ function RafflePage() {
                 </RadioGroup>
               </div>
 
+              <div>
+                <Label className="mb-2 block">How would you like to pay?</Label>
+                <RadioGroup
+                  value={paymentChoice}
+                  onValueChange={(v) => setPaymentChoice(v as PaymentChoice)}
+                  className="grid gap-3 sm:grid-cols-2"
+                >
+                  {([
+                    { key: "pay_now", title: "Pay now (transfer)", desc: "Transfer to the bank account and upload your proof on the next screen." },
+                    { key: "pay_at_venue", title: "Book — pay at venue", desc: "Reserve now, pay cash or transfer at the event with your reference." },
+                  ] as Array<{ key: PaymentChoice; title: string; desc: string }>).map(({ key, title, desc }) => {
+                    const active = paymentChoice === key;
+                    return (
+                      <label
+                        key={key}
+                        htmlFor={`pay-${key}`}
+                        className={`cursor-pointer rounded-lg border p-4 transition ${active ? "border-primary ring-2 ring-primary/20 bg-primary/5" : "border-border hover:border-primary/40"}`}
+                      >
+                        <div className="flex items-start justify-between gap-3">
+                          <div>
+                            <div className="font-semibold">{title}</div>
+                            <div className="text-xs text-foreground/60 mt-1">{desc}</div>
+                          </div>
+                          <RadioGroupItem id={`pay-${key}`} value={key} />
+                        </div>
+                      </label>
+                    );
+                  })}
+                </RadioGroup>
+              </div>
+
               <div className="grid gap-4 sm:grid-cols-2">
                 <div>
                   <Label htmlFor="buyer_name">Full name *</Label>
@@ -229,8 +260,13 @@ function RafflePage() {
                 </div>
               </div>
 
-              <BankBox bank={bank} copy={copy} copied={copied} />
-
+              {paymentChoice === "pay_now" ? (
+                <BankBox bank={bank} copy={copy} copied={copied} />
+              ) : (
+                <div className="rounded-lg border border-dashed border-primary/40 bg-secondary/30 p-4 text-sm">
+                  No payment now — bring your reference to the venue to pay and collect tickets.
+                </div>
+              )}
               <Button type="submit" disabled={submitting} className="w-full bg-primary text-primary-foreground">
                 {submitting ? "Reserving…" : `Reserve ${PACKS[pack].label} — ₦${PACKS[pack].price.toLocaleString()}`}
               </Button>

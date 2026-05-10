@@ -12,6 +12,7 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as SponsorRouteImport } from './routes/sponsor'
 import { Route as RegisterRouteImport } from './routes/register'
 import { Route as ReceiptRouteImport } from './routes/receipt'
+import { Route as RaffleRouteImport } from './routes/raffle'
 import { Route as AdminRouteImport } from './routes/admin'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AdminLoginRouteImport } from './routes/admin_.login'
@@ -29,6 +30,11 @@ const RegisterRoute = RegisterRouteImport.update({
 const ReceiptRoute = ReceiptRouteImport.update({
   id: '/receipt',
   path: '/receipt',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const RaffleRoute = RaffleRouteImport.update({
+  id: '/raffle',
+  path: '/raffle',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AdminRoute = AdminRouteImport.update({
@@ -50,6 +56,7 @@ const AdminLoginRoute = AdminLoginRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/admin': typeof AdminRoute
+  '/raffle': typeof RaffleRoute
   '/receipt': typeof ReceiptRoute
   '/register': typeof RegisterRoute
   '/sponsor': typeof SponsorRoute
@@ -58,6 +65,7 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/admin': typeof AdminRoute
+  '/raffle': typeof RaffleRoute
   '/receipt': typeof ReceiptRoute
   '/register': typeof RegisterRoute
   '/sponsor': typeof SponsorRoute
@@ -67,6 +75,7 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/admin': typeof AdminRoute
+  '/raffle': typeof RaffleRoute
   '/receipt': typeof ReceiptRoute
   '/register': typeof RegisterRoute
   '/sponsor': typeof SponsorRoute
@@ -77,16 +86,25 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/admin'
+    | '/raffle'
     | '/receipt'
     | '/register'
     | '/sponsor'
     | '/admin/login'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/admin' | '/receipt' | '/register' | '/sponsor' | '/admin/login'
+  to:
+    | '/'
+    | '/admin'
+    | '/raffle'
+    | '/receipt'
+    | '/register'
+    | '/sponsor'
+    | '/admin/login'
   id:
     | '__root__'
     | '/'
     | '/admin'
+    | '/raffle'
     | '/receipt'
     | '/register'
     | '/sponsor'
@@ -96,6 +114,7 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AdminRoute: typeof AdminRoute
+  RaffleRoute: typeof RaffleRoute
   ReceiptRoute: typeof ReceiptRoute
   RegisterRoute: typeof RegisterRoute
   SponsorRoute: typeof SponsorRoute
@@ -125,6 +144,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ReceiptRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/raffle': {
+      id: '/raffle'
+      path: '/raffle'
+      fullPath: '/raffle'
+      preLoaderRoute: typeof RaffleRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/admin': {
       id: '/admin'
       path: '/admin'
@@ -152,6 +178,7 @@ declare module '@tanstack/react-router' {
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AdminRoute: AdminRoute,
+  RaffleRoute: RaffleRoute,
   ReceiptRoute: ReceiptRoute,
   RegisterRoute: RegisterRoute,
   SponsorRoute: SponsorRoute,
@@ -160,3 +187,13 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}

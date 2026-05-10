@@ -47,6 +47,7 @@ function AdminDashboard() {
   const navigate = useNavigate();
   const [authChecked, setAuthChecked] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
+  const [section, setSection] = useState<string>("registrations");
 
   useEffect(() => {
     let active = true;
@@ -89,8 +90,6 @@ function AdminDashboard() {
     );
   }
   if (!isAdmin) return null;
-
-  const [section, setSection] = useState<string>("registrations");
 
   const navItems = [
     { key: "registrations", label: "Registrations", icon: Users },
@@ -211,39 +210,50 @@ function RegistrationsPanel() {
     toast.success("Updated");
   }
 
-  function exportCsv() {
-    if (filtered.length === 0) {
-      toast.error("Nothing to export");
-      return;
-    }
+  function buildExportRows() {
     const headers = [
-      "Registered", "Title", "Full Name", "Email", "Phone", "Position", "Organization",
+      "Reference", "Registered", "Title", "Full Name", "Email", "Phone", "Position", "Organization",
       "Rotary Club", "Address", "Tier", "Amount (NGN)", "Guests", "Payment Method",
       "Payment Status", "Payment Reference", "Payment Proof URL", "Notes",
     ];
+    const data = filtered.map((r) => [
+      displayRef(r),
+      new Date(r.created_at).toISOString(),
+      r.title, r.full_name, r.email, r.phone, r.position, r.organization,
+      r.rotary_club, r.address, r.tier?.toUpperCase(), r.amount, r.guests_count, r.payment_method,
+      r.payment_status, r.payment_reference, r.payment_proof_url, r.notes,
+    ]);
+    return { headers, data };
+  }
+
+  function exportCsv() {
+    if (filtered.length === 0) return toast.error("Nothing to export");
+    const { headers, data } = buildExportRows();
     const esc = (v: unknown) => {
       const s = v === null || v === undefined ? "" : String(v);
       return /[",\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
     };
-    const lines = [headers.join(",")];
-    for (const r of filtered) {
-      lines.push([
-        new Date(r.created_at).toISOString(),
-        r.title, r.full_name, r.email, r.phone, r.position, r.organization,
-        r.rotary_club, r.address, r.tier, r.amount, r.guests_count, r.payment_method,
-        r.payment_status, r.payment_reference, r.payment_proof_url, r.notes,
-      ].map(esc).join(","));
-    }
+    const lines = [headers.join(","), ...data.map((row) => row.map(esc).join(","))];
     const blob = new Blob(["\ufeff" + lines.join("\n")], { type: "text/csv;charset=utf-8;" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = `registrations-${new Date().toISOString().slice(0, 10)}.csv`;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
-    toast.success(`Exported ${filtered.length} row${filtered.length > 1 ? "s" : ""}`);
+    triggerDownload(blob, `registrations-${new Date().toISOString().slice(0, 10)}.csv`);
+    toast.success(`Exported ${filtered.length} row${filtered.length > 1 ? "s" : ""} as CSV`);
+  }
+
+  function exportXls() {
+    if (filtered.length === 0) return toast.error("Nothing to export");
+    const { headers, data } = buildExportRows();
+    const esc = (v: unknown) =>
+      String(v ?? "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+    const thead = `<tr>${headers.map((h) => `<th style="background:#0a1f44;color:#fff">${esc(h)}</th>`).join("")}</tr>`;
+    const tbody = data
+      .map((row) => `<tr>${row.map((c) => `<td>${esc(c)}</td>`).join("")}</tr>`)
+      .join("");
+    const html = `<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel">
+<head><meta charset="utf-8"/></head>
+<body><table border="1">${thead}${tbody}</table></body></html>`;
+    const blob = new Blob(["\ufeff" + html], { type: "application/vnd.ms-excel" });
+    triggerDownload(blob, `registrations-${new Date().toISOString().slice(0, 10)}.xls`);
+    toast.success(`Exported ${filtered.length} row${filtered.length > 1 ? "s" : ""} as XLS`);
   }
 
   async function deleteRow(id: string) {
@@ -291,8 +301,11 @@ function RegistrationsPanel() {
         <Button variant="outline" onClick={loadRows} disabled={loading}>
           <RefreshCw className={`size-4 mr-1 ${loading ? "animate-spin" : ""}`} /> Refresh
         </Button>
-        <Button onClick={exportCsv} disabled={loading || filtered.length === 0} className="bg-primary text-primary-foreground hover:bg-primary/90">
-          <Download className="size-4 mr-1" /> Export CSV
+        <Button onClick={exportCsv} disabled={loading || filtered.length === 0} variant="outline">
+          <Download className="size-4 mr-1" /> CSV
+        </Button>
+        <Button onClick={exportXls} disabled={loading || filtered.length === 0} className="bg-primary text-primary-foreground hover:bg-primary/90">
+          <Download className="size-4 mr-1" /> Excel (XLS)
         </Button>
       </Card>
 
@@ -375,13 +388,32 @@ function RegistrationsPanel() {
         open={!!detail}
         onOpenChange={(v) => { if (!v) setDetail(null); }}
         onPrint={(r) => printSlip(r)}
+        onUpdated={(updated) => {
+          setRows((rs) => rs.map((x) => (x.id === updated.id ? updated : x)));
+          setDetail(updated);
+        }}
       />
     </>
   );
 }
 
+function displayRef(r: Registration) {
+  return r.payment_reference?.trim() || r.id.slice(0, 8).toUpperCase();
+}
+
+function triggerDownload(blob: Blob, filename: string) {
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+
 function printSlip(r: Registration) {
-  const ref = r.id.slice(0, 8).toUpperCase();
+  const ref = displayRef(r);
   const html = `<!doctype html><html><head><meta charset="utf-8"/><title>Slip ${ref}</title>
     <style>
       body{font-family:system-ui,-apple-system,sans-serif;padding:32px;color:#0a1f44;max-width:640px;margin:auto}
@@ -409,7 +441,7 @@ function printSlip(r: Registration) {
       <tr><td>Guests</td><td>${r.guests_count}</td></tr>
       <tr><td>Payment method</td><td>${r.payment_method}</td></tr>
       <tr><td>Payment status</td><td>${r.payment_status}</td></tr>
-      <tr><td>Reference</td><td style="font-family:ui-monospace,monospace">${r.payment_reference ?? "—"}</td></tr>
+      <tr><td>Internal ID</td><td style="font-family:ui-monospace,monospace;font-size:11px">${r.id}</td></tr>
       <tr><td>Registered</td><td>${new Date(r.created_at).toLocaleString()}</td></tr>
     </table>
     <p class="muted" style="margin-top:24px">Please present this slip at the venue.</p>
@@ -421,18 +453,69 @@ function printSlip(r: Registration) {
   w.document.close();
 }
 
-function RegistrationDetailDialog({ registration, open, onOpenChange, onPrint }: {
+async function downloadPaymentProof(r: Registration) {
+  if (!r.payment_proof_url) return;
+  try {
+    const res = await fetch(r.payment_proof_url);
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const blob = await res.blob();
+    const ext = (r.payment_proof_url.split("?")[0].split(".").pop() || "jpg").toLowerCase();
+    const ref = displayRef(r);
+    const safeName = r.full_name.replace(/[^a-z0-9]+/gi, "-").toLowerCase();
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `payment-proof-${ref}-${safeName}.${ext}`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    toast.success("Proof downloaded");
+  } catch (e) {
+    toast.error(`Could not download: ${(e as Error).message}`);
+  }
+}
+
+function RegistrationDetailDialog({ registration, open, onOpenChange, onPrint, onUpdated }: {
   registration: Registration | null;
   open: boolean;
   onOpenChange: (v: boolean) => void;
   onPrint: (r: Registration) => void;
+  onUpdated: (r: Registration) => void;
 }) {
+  const [status, setStatus] = useState<Registration["payment_status"]>("pending");
+  const [method, setMethod] = useState<string>("pay_at_venue");
+  const [saving, setSaving] = useState(false);
+
+  useEffect(() => {
+    if (registration) {
+      setStatus(registration.payment_status);
+      setMethod(registration.payment_method);
+    }
+  }, [registration]);
+
   if (!registration) return null;
   const r = registration;
-  const ref = r.id.slice(0, 8).toUpperCase();
+  const ref = displayRef(r);
+  const dirty = status !== r.payment_status || method !== r.payment_method;
+
+  async function save() {
+    setSaving(true);
+    const { data, error } = await supabase
+      .from("registrations")
+      .update({ payment_status: status, payment_method: method })
+      .eq("id", r.id)
+      .select()
+      .single();
+    setSaving(false);
+    if (error) return toast.error(error.message);
+    if (data) onUpdated(data as Registration);
+    toast.success("Saved");
+  }
+
   const rows: Array<[string, React.ReactNode]> = [
     ["Reference", <span className="font-mono font-semibold">{ref}</span>],
-    ["Full ID", <span className="font-mono text-xs break-all">{r.id}</span>],
+    ["Internal ID", <span className="font-mono text-xs break-all">{r.id}</span>],
     ["Title", r.title || "—"],
     ["Full name", r.full_name],
     ["Email", r.email || "—"],
@@ -445,8 +528,6 @@ function RegistrationDetailDialog({ registration, open, onOpenChange, onPrint }:
     ["Tier", r.tier.toUpperCase()],
     ["Amount", formatNGN(r.amount)],
     ["Guests", r.guests_count],
-    ["Payment method", r.payment_method],
-    ["Payment status", r.payment_status],
     ["Payment reference", r.payment_reference || "—"],
     ["Notes", r.notes || "—"],
     ["Created", new Date(r.created_at).toLocaleString()],
@@ -458,7 +539,38 @@ function RegistrationDetailDialog({ registration, open, onOpenChange, onPrint }:
         <DialogHeader>
           <DialogTitle>Registration details · {ref}</DialogTitle>
         </DialogHeader>
-        <div className="grid gap-px bg-border rounded-md overflow-hidden text-sm">
+
+        <div className="grid sm:grid-cols-2 gap-3 p-3 border rounded-md bg-muted/30">
+          <div className="grid gap-1.5">
+            <Label className="text-xs">Payment status</Label>
+            <Select value={status} onValueChange={(v) => setStatus(v as Registration["payment_status"])}>
+              <SelectTrigger><SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="pending">Pending</SelectItem>
+                <SelectItem value="pay_at_venue">Pay at venue</SelectItem>
+                <SelectItem value="paid">Paid</SelectItem>
+                <SelectItem value="cancelled">Cancelled</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="grid gap-1.5">
+            <Label className="text-xs">Payment method</Label>
+            <Select value={method} onValueChange={setMethod}>
+              <SelectTrigger><SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="pay_now">Pay now (transfer)</SelectItem>
+                <SelectItem value="pay_at_venue">Pay at venue</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="sm:col-span-2 flex justify-end">
+            <Button onClick={save} disabled={!dirty || saving} size="sm" className="bg-primary text-primary-foreground">
+              {saving ? "Saving…" : "Save changes"}
+            </Button>
+          </div>
+        </div>
+
+        <div className="grid gap-px bg-border rounded-md overflow-hidden text-sm mt-3">
           {rows.map(([k, v]) => (
             <div key={k} className="grid grid-cols-[160px_1fr] gap-2 bg-card p-3">
               <div className="text-muted-foreground">{k}</div>
@@ -467,8 +579,13 @@ function RegistrationDetailDialog({ registration, open, onOpenChange, onPrint }:
           ))}
         </div>
         {r.payment_proof_url && (
-          <div className="mt-2">
-            <p className="text-xs text-muted-foreground mb-1">Payment proof</p>
+          <div className="mt-3">
+            <div className="flex items-center justify-between mb-1">
+              <p className="text-xs text-muted-foreground">Payment proof</p>
+              <Button size="sm" variant="outline" onClick={() => downloadPaymentProof(r)}>
+                <Download className="size-4 mr-1" /> Download
+              </Button>
+            </div>
             <a href={r.payment_proof_url} target="_blank" rel="noreferrer">
               <img src={r.payment_proof_url} alt="Payment proof" className="max-h-72 rounded border" />
             </a>

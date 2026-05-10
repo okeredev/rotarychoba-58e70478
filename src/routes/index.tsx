@@ -356,7 +356,7 @@ function Landing() {
             <Link to="/sponsor" className="text-sidebar-foreground/70 hover:text-gold">Sponsor</Link>
             <Link to="/receipt" className="text-sidebar-foreground/70 hover:text-gold">My slip</Link>
             <a href="#awards" className="text-sidebar-foreground/70 hover:text-gold">Awards</a>
-            <Link to="/admin/login" className="text-sidebar-foreground/70 hover:text-gold">Admin</Link>
+            
           </div>
           <p className="mt-6 text-[11px] uppercase tracking-widest text-sidebar-foreground/50">
             Website by <span className="text-gold font-semibold">webserve</span>

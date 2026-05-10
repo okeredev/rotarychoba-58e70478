@@ -398,6 +398,17 @@ function displayRef(r: Registration) {
   return r.payment_reference?.trim() || r.id.slice(0, 8).toUpperCase();
 }
 
+function triggerDownload(blob: Blob, filename: string) {
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+
 function printSlip(r: Registration) {
   const ref = displayRef(r);
   const html = `<!doctype html><html><head><meta charset="utf-8"/><title>Slip ${ref}</title>

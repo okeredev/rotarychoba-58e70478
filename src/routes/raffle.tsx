@@ -6,7 +6,7 @@ import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { ArrowLeft, Check, Copy, Ticket } from "lucide-react";
+import { ArrowLeft, Check, Copy, ImageIcon, Ticket, Upload } from "lucide-react";
 import { fetchBankInfo, DEFAULT_BANK, type BankInfo } from "@/lib/settings";
 import { EVENT } from "@/lib/tiers";
 import { supabase } from "@/integrations/supabase/client";
@@ -42,11 +42,14 @@ const Schema = z.object({
   reference: z.string().max(120).optional().or(z.literal("")),
 });
 
+type PaymentChoice = "pay_now" | "pay_at_venue";
+
 function RafflePage() {
   const [bank, setBank] = useState<BankInfo>(DEFAULT_BANK);
   const [pack, setPack] = useState<PackKey>("single");
+  const [paymentChoice, setPaymentChoice] = useState<PaymentChoice>("pay_now");
   const [submitting, setSubmitting] = useState(false);
-  const [done, setDone] = useState<{ id: string; amount: number; qty: number } | null>(null);
+  const [done, setDone] = useState<{ id: string; amount: number; qty: number; payment_method: PaymentChoice } | null>(null);
   const [copied, setCopied] = useState<string | null>(null);
 
   useEffect(() => {
@@ -91,12 +94,17 @@ function RafflePage() {
           qty: p.qty,
           amount: p.price,
           reference: parsed.data.reference || null,
+          payment_method: paymentChoice,
         })
-        .select("id, amount, qty")
+        .select("id, amount, qty, payment_method")
         .single();
       if (error) throw error;
-      setDone({ id: data.id, amount: data.amount, qty: data.qty });
-      toast.success("Reserved! Complete payment to the bank account shown.");
+      setDone({ id: data.id, amount: data.amount, qty: data.qty, payment_method: paymentChoice });
+      toast.success(
+        paymentChoice === "pay_now"
+          ? "Reserved! Pay via bank transfer and upload your proof below."
+          : "Reserved! Pay at the venue on the day with this reference.",
+      );
     } catch (err) {
       const msg = err instanceof Error ? err.message : "Could not submit";
       toast.error(msg);

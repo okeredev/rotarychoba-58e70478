@@ -47,6 +47,7 @@ function AdminDashboard() {
   const navigate = useNavigate();
   const [authChecked, setAuthChecked] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
+  const [section, setSection] = useState<string>("registrations");
 
   useEffect(() => {
     let active = true;
@@ -89,8 +90,6 @@ function AdminDashboard() {
     );
   }
   if (!isAdmin) return null;
-
-  const [section, setSection] = useState<string>("registrations");
 
   const navItems = [
     { key: "registrations", label: "Registrations", icon: Users },

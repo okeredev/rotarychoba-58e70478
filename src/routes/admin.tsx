@@ -369,7 +369,119 @@ function RegistrationsPanel() {
           </Table>
         </div>
       </Card>
+
+      <RegistrationDetailDialog
+        registration={detail}
+        open={!!detail}
+        onOpenChange={(v) => { if (!v) setDetail(null); }}
+        onPrint={(r) => printSlip(r)}
+      />
     </>
+  );
+}
+
+function printSlip(r: Registration) {
+  const ref = r.id.slice(0, 8).toUpperCase();
+  const html = `<!doctype html><html><head><meta charset="utf-8"/><title>Slip ${ref}</title>
+    <style>
+      body{font-family:system-ui,-apple-system,sans-serif;padding:32px;color:#0a1f44;max-width:640px;margin:auto}
+      h1{color:#0a1f44;margin:0 0 4px;font-size:22px}
+      .muted{color:#666;font-size:12px}
+      table{width:100%;border-collapse:collapse;margin-top:16px}
+      td{padding:8px 4px;border-bottom:1px solid #eee;font-size:14px;vertical-align:top}
+      td:first-child{color:#666;width:40%}
+      .ref{font-family:ui-monospace,monospace;font-size:18px;font-weight:700;letter-spacing:1px;background:#f5f0e0;padding:8px 12px;border-radius:6px;display:inline-block;margin-top:8px}
+      .badge{display:inline-block;padding:2px 8px;border-radius:4px;background:#0a1f44;color:#fff;font-size:11px;text-transform:uppercase}
+      @media print{button{display:none}}
+    </style></head><body>
+    <h1>Rotary Club of Choba-Uniport</h1>
+    <p class="muted">16th Installation · Registration Slip</p>
+    <div class="ref">REF: ${ref}</div>
+    <table>
+      <tr><td>Attendee</td><td>${[r.title, r.full_name].filter(Boolean).join(" ")}</td></tr>
+      <tr><td>Email</td><td>${r.email ?? "—"}</td></tr>
+      <tr><td>Phone</td><td>${r.phone}</td></tr>
+      <tr><td>Position / Org</td><td>${[r.position, r.organization].filter(Boolean).join(" · ") || "—"}</td></tr>
+      <tr><td>Rotary Club</td><td>${r.rotary_club ?? "—"}</td></tr>
+      <tr><td>Address</td><td>${r.address ?? "—"}</td></tr>
+      <tr><td>Tier</td><td><span class="badge">${r.tier.toUpperCase()}</span></td></tr>
+      <tr><td>Amount</td><td><strong>₦${r.amount.toLocaleString()}</strong></td></tr>
+      <tr><td>Guests</td><td>${r.guests_count}</td></tr>
+      <tr><td>Payment method</td><td>${r.payment_method}</td></tr>
+      <tr><td>Payment status</td><td>${r.payment_status}</td></tr>
+      <tr><td>Reference</td><td style="font-family:ui-monospace,monospace">${r.payment_reference ?? "—"}</td></tr>
+      <tr><td>Registered</td><td>${new Date(r.created_at).toLocaleString()}</td></tr>
+    </table>
+    <p class="muted" style="margin-top:24px">Please present this slip at the venue.</p>
+    <button onclick="window.print()" style="margin-top:16px;padding:8px 16px;background:#0a1f44;color:#fff;border:0;border-radius:6px;cursor:pointer">Print</button>
+    </body></html>`;
+  const w = window.open("", "_blank", "width=720,height=900");
+  if (!w) { toast.error("Pop-up blocked"); return; }
+  w.document.write(html);
+  w.document.close();
+}
+
+function RegistrationDetailDialog({ registration, open, onOpenChange, onPrint }: {
+  registration: Registration | null;
+  open: boolean;
+  onOpenChange: (v: boolean) => void;
+  onPrint: (r: Registration) => void;
+}) {
+  if (!registration) return null;
+  const r = registration;
+  const ref = r.id.slice(0, 8).toUpperCase();
+  const rows: Array<[string, React.ReactNode]> = [
+    ["Reference", <span className="font-mono font-semibold">{ref}</span>],
+    ["Full ID", <span className="font-mono text-xs break-all">{r.id}</span>],
+    ["Title", r.title || "—"],
+    ["Full name", r.full_name],
+    ["Email", r.email || "—"],
+    ["Phone", r.phone],
+    ["Position", r.position || "—"],
+    ["Organization", r.organization || "—"],
+    ["Occupation", r.occupation || "—"],
+    ["Rotary club", r.rotary_club || "—"],
+    ["Address", r.address || "—"],
+    ["Tier", r.tier.toUpperCase()],
+    ["Amount", formatNGN(r.amount)],
+    ["Guests", r.guests_count],
+    ["Payment method", r.payment_method],
+    ["Payment status", r.payment_status],
+    ["Payment reference", r.payment_reference || "—"],
+    ["Notes", r.notes || "—"],
+    ["Created", new Date(r.created_at).toLocaleString()],
+    ["Last updated", new Date(r.updated_at).toLocaleString()],
+  ];
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle>Registration details · {ref}</DialogTitle>
+        </DialogHeader>
+        <div className="grid gap-px bg-border rounded-md overflow-hidden text-sm">
+          {rows.map(([k, v]) => (
+            <div key={k} className="grid grid-cols-[160px_1fr] gap-2 bg-card p-3">
+              <div className="text-muted-foreground">{k}</div>
+              <div className="break-words">{v}</div>
+            </div>
+          ))}
+        </div>
+        {r.payment_proof_url && (
+          <div className="mt-2">
+            <p className="text-xs text-muted-foreground mb-1">Payment proof</p>
+            <a href={r.payment_proof_url} target="_blank" rel="noreferrer">
+              <img src={r.payment_proof_url} alt="Payment proof" className="max-h-72 rounded border" />
+            </a>
+          </div>
+        )}
+        <DialogFooter className="gap-2 sm:gap-2">
+          <Button variant="outline" onClick={() => onOpenChange(false)}>Close</Button>
+          <Button onClick={() => onPrint(r)} className="bg-primary text-primary-foreground">
+            <Printer className="size-4 mr-1" /> Print slip
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 }
 

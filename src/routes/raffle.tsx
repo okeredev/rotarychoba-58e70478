@@ -6,7 +6,7 @@ import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { ArrowLeft, Check, Copy, Ticket } from "lucide-react";
+import { ArrowLeft, Check, Copy, ImageIcon, Ticket, Upload } from "lucide-react";
 import { fetchBankInfo, DEFAULT_BANK, type BankInfo } from "@/lib/settings";
 import { EVENT } from "@/lib/tiers";
 import { supabase } from "@/integrations/supabase/client";
@@ -42,11 +42,14 @@ const Schema = z.object({
   reference: z.string().max(120).optional().or(z.literal("")),
 });
 
+type PaymentChoice = "pay_now" | "pay_at_venue";
+
 function RafflePage() {
   const [bank, setBank] = useState<BankInfo>(DEFAULT_BANK);
   const [pack, setPack] = useState<PackKey>("single");
+  const [paymentChoice, setPaymentChoice] = useState<PaymentChoice>("pay_now");
   const [submitting, setSubmitting] = useState(false);
-  const [done, setDone] = useState<{ id: string; amount: number; qty: number } | null>(null);
+  const [done, setDone] = useState<{ id: string; amount: number; qty: number; payment_method: PaymentChoice } | null>(null);
   const [copied, setCopied] = useState<string | null>(null);
 
   useEffect(() => {
@@ -91,12 +94,17 @@ function RafflePage() {
           qty: p.qty,
           amount: p.price,
           reference: parsed.data.reference || null,
+          payment_method: paymentChoice,
         })
-        .select("id, amount, qty")
+        .select("id, amount, qty, payment_method")
         .single();
       if (error) throw error;
-      setDone({ id: data.id, amount: data.amount, qty: data.qty });
-      toast.success("Reserved! Complete payment to the bank account shown.");
+      setDone({ id: data.id, amount: data.amount, qty: data.qty, payment_method: paymentChoice });
+      toast.success(
+        paymentChoice === "pay_now"
+          ? "Reserved! Pay via bank transfer and upload your proof below."
+          : "Reserved! Pay at the venue on the day with this reference.",
+      );
     } catch (err) {
       const msg = err instanceof Error ? err.message : "Could not submit";
       toast.error(msg);
@@ -154,9 +162,19 @@ function RafflePage() {
             <div className="rounded-lg border border-border p-4 space-y-2 text-sm">
               <div className="flex justify-between"><span className="text-foreground/60">Tickets</span><span className="font-semibold">{done.qty}</span></div>
               <div className="flex justify-between"><span className="text-foreground/60">Amount</span><span className="font-semibold">₦{done.amount.toLocaleString()}</span></div>
+              <div className="flex justify-between"><span className="text-foreground/60">Payment</span><span className="font-semibold">{done.payment_method === "pay_now" ? "Pay now (transfer)" : "Pay at venue"}</span></div>
             </div>
 
-            <BankBox bank={bank} copy={copy} copied={copied} />
+            {done.payment_method === "pay_now" ? (
+              <>
+                <BankBox bank={bank} copy={copy} copied={copied} />
+                <RaffleProofUpload saleId={done.id} />
+              </>
+            ) : (
+              <div className="rounded-lg border border-dashed border-primary/40 bg-secondary/30 p-4 text-sm">
+                Bring this reference to the venue on the day of the event to pay and collect your tickets.
+              </div>
+            )}
 
             <div className="flex flex-col sm:flex-row gap-3 pt-2">
               <Button onClick={() => setDone(null)} variant="outline" className="flex-1">Buy more tickets</Button>
@@ -192,6 +210,37 @@ function RafflePage() {
                 </RadioGroup>
               </div>
 
+              <div>
+                <Label className="mb-2 block">How would you like to pay?</Label>
+                <RadioGroup
+                  value={paymentChoice}
+                  onValueChange={(v) => setPaymentChoice(v as PaymentChoice)}
+                  className="grid gap-3 sm:grid-cols-2"
+                >
+                  {([
+                    { key: "pay_now", title: "Pay now (transfer)", desc: "Transfer to the bank account and upload your proof on the next screen." },
+                    { key: "pay_at_venue", title: "Book — pay at venue", desc: "Reserve now, pay cash or transfer at the event with your reference." },
+                  ] as Array<{ key: PaymentChoice; title: string; desc: string }>).map(({ key, title, desc }) => {
+                    const active = paymentChoice === key;
+                    return (
+                      <label
+                        key={key}
+                        htmlFor={`pay-${key}`}
+                        className={`cursor-pointer rounded-lg border p-4 transition ${active ? "border-primary ring-2 ring-primary/20 bg-primary/5" : "border-border hover:border-primary/40"}`}
+                      >
+                        <div className="flex items-start justify-between gap-3">
+                          <div>
+                            <div className="font-semibold">{title}</div>
+                            <div className="text-xs text-foreground/60 mt-1">{desc}</div>
+                          </div>
+                          <RadioGroupItem id={`pay-${key}`} value={key} />
+                        </div>
+                      </label>
+                    );
+                  })}
+                </RadioGroup>
+              </div>
+
               <div className="grid gap-4 sm:grid-cols-2">
                 <div>
                   <Label htmlFor="buyer_name">Full name *</Label>
@@ -211,8 +260,13 @@ function RafflePage() {
                 </div>
               </div>
 
-              <BankBox bank={bank} copy={copy} copied={copied} />
-
+              {paymentChoice === "pay_now" ? (
+                <BankBox bank={bank} copy={copy} copied={copied} />
+              ) : (
+                <div className="rounded-lg border border-dashed border-primary/40 bg-secondary/30 p-4 text-sm">
+                  No payment now — bring your reference to the venue to pay and collect tickets.
+                </div>
+              )}
               <Button type="submit" disabled={submitting} className="w-full bg-primary text-primary-foreground">
                 {submitting ? "Reserving…" : `Reserve ${PACKS[pack].label} — ₦${PACKS[pack].price.toLocaleString()}`}
               </Button>
@@ -249,5 +303,74 @@ function Row({ label, value, k, copy, copied, mono }: { label: string; value: st
         {copied === k ? <Check className="size-4" /> : <Copy className="size-4" />}
       </Button>
     </div>
+  );
+}
+
+function RaffleProofUpload({ saleId }: { saleId: string }) {
+  const [uploading, setUploading] = useState(false);
+  const [uploadedUrl, setUploadedUrl] = useState<string | null>(null);
+
+  async function handleFile(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (!file.type.startsWith("image/")) {
+      toast.error("Please upload an image (PNG/JPG)");
+      return;
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error("Image must be under 5 MB");
+      return;
+    }
+    setUploading(true);
+    const ext = file.name.split(".").pop()?.toLowerCase() || "jpg";
+    const path = `raffle/${saleId}/${Date.now()}.${ext}`;
+    const { error: upErr } = await supabase.storage
+      .from("payment-proofs")
+      .upload(path, file, { upsert: false, contentType: file.type });
+    if (upErr) {
+      setUploading(false);
+      toast.error(upErr.message);
+      return;
+    }
+    const { data: pub } = supabase.storage.from("payment-proofs").getPublicUrl(path);
+    const url = pub.publicUrl;
+    const { error: rpcErr } = await supabase.rpc("attach_raffle_payment_proof", {
+      sale_id: saleId,
+      proof_url: url,
+    });
+    setUploading(false);
+    if (rpcErr) {
+      toast.error(rpcErr.message);
+      return;
+    }
+    setUploadedUrl(url);
+    toast.success("Payment proof uploaded");
+  }
+
+  if (uploadedUrl) {
+    return (
+      <div className="rounded-lg border-2 border-primary/30 bg-secondary/40 p-4">
+        <p className="font-semibold text-primary flex items-center gap-2">
+          <Check className="size-4" /> Payment proof received
+        </p>
+        <p className="mt-1 text-xs text-foreground/60">
+          The secretariat will verify and confirm your tickets.
+        </p>
+        <a href={uploadedUrl} target="_blank" rel="noreferrer" className="mt-3 inline-flex items-center gap-2 text-xs text-primary hover:underline">
+          <ImageIcon className="size-3.5" /> View uploaded screenshot
+        </a>
+      </div>
+    );
+  }
+
+  return (
+    <label className="block rounded-lg border-2 border-dashed border-primary/40 bg-card hover:bg-secondary/50 transition cursor-pointer p-5 text-center">
+      <Upload className="size-6 mx-auto text-primary" />
+      <p className="mt-2 font-semibold text-primary">
+        {uploading ? "Uploading…" : "Upload payment proof"}
+      </p>
+      <p className="text-xs text-foreground/60 mt-1">PNG or JPG, up to 5 MB</p>
+      <input type="file" accept="image/*" className="sr-only" onChange={handleFile} disabled={uploading} />
+    </label>
   );
 }

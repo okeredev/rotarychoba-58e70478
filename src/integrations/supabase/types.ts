@@ -111,6 +111,8 @@ export type Database = {
           id: string
           notes: string | null
           pack: Database["public"]["Enums"]["raffle_pack"]
+          payment_method: string
+          payment_proof_url: string | null
           payment_status: Database["public"]["Enums"]["payment_status"]
           qty: number
           reference: string | null
@@ -125,6 +127,8 @@ export type Database = {
           id?: string
           notes?: string | null
           pack?: Database["public"]["Enums"]["raffle_pack"]
+          payment_method?: string
+          payment_proof_url?: string | null
           payment_status?: Database["public"]["Enums"]["payment_status"]
           qty?: number
           reference?: string | null
@@ -139,6 +143,8 @@ export type Database = {
           id?: string
           notes?: string | null
           pack?: Database["public"]["Enums"]["raffle_pack"]
+          payment_method?: string
+          payment_proof_url?: string | null
           payment_status?: Database["public"]["Enums"]["payment_status"]
           qty?: number
           reference?: string | null
@@ -288,6 +294,10 @@ export type Database = {
     Functions: {
       attach_payment_proof: {
         Args: { proof_url: string; reg_id: string }
+        Returns: undefined
+      }
+      attach_raffle_payment_proof: {
+        Args: { proof_url: string; sale_id: string }
         Returns: undefined
       }
       has_role: {

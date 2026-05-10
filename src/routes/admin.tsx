@@ -675,7 +675,19 @@ function MemberDialog({ open, onOpenChange, member, onSaved }: {
               </Select>
             </div>
             <div className="grid gap-2">
-              <Label>Display order</Label>
+              <Label className="flex items-center gap-1">
+                Display order
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Info className="size-3 text-muted-foreground cursor-help" />
+                    </TooltipTrigger>
+                    <TooltipContent className="max-w-xs">
+                      Lower numbers appear first. Use 1, 2, 3… to reorder how members show on the homepage.
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+              </Label>
               <Input type="number" value={sortOrder} onChange={(e) => setSortOrder(parseInt(e.target.value) || 0)} />
             </div>
           </div>

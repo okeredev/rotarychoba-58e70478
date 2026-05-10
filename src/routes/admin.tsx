@@ -189,6 +189,8 @@ function RegistrationsPanel() {
   const [search, setSearch] = useState("");
   const [tierFilter, setTierFilter] = useState<string>("all");
 
+  const [detail, setDetail] = useState<Registration | null>(null);
+
   useEffect(() => { void loadRows(); }, []);
 
   async function loadRows() {

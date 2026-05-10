@@ -210,39 +210,50 @@ function RegistrationsPanel() {
     toast.success("Updated");
   }
 
-  function exportCsv() {
-    if (filtered.length === 0) {
-      toast.error("Nothing to export");
-      return;
-    }
+  function buildExportRows() {
     const headers = [
-      "Registered", "Title", "Full Name", "Email", "Phone", "Position", "Organization",
+      "Reference", "Registered", "Title", "Full Name", "Email", "Phone", "Position", "Organization",
       "Rotary Club", "Address", "Tier", "Amount (NGN)", "Guests", "Payment Method",
       "Payment Status", "Payment Reference", "Payment Proof URL", "Notes",
     ];
+    const data = filtered.map((r) => [
+      displayRef(r),
+      new Date(r.created_at).toISOString(),
+      r.title, r.full_name, r.email, r.phone, r.position, r.organization,
+      r.rotary_club, r.address, r.tier?.toUpperCase(), r.amount, r.guests_count, r.payment_method,
+      r.payment_status, r.payment_reference, r.payment_proof_url, r.notes,
+    ]);
+    return { headers, data };
+  }
+
+  function exportCsv() {
+    if (filtered.length === 0) return toast.error("Nothing to export");
+    const { headers, data } = buildExportRows();
     const esc = (v: unknown) => {
       const s = v === null || v === undefined ? "" : String(v);
       return /[",\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
     };
-    const lines = [headers.join(",")];
-    for (const r of filtered) {
-      lines.push([
-        new Date(r.created_at).toISOString(),
-        r.title, r.full_name, r.email, r.phone, r.position, r.organization,
-        r.rotary_club, r.address, r.tier, r.amount, r.guests_count, r.payment_method,
-        r.payment_status, r.payment_reference, r.payment_proof_url, r.notes,
-      ].map(esc).join(","));
-    }
+    const lines = [headers.join(","), ...data.map((row) => row.map(esc).join(","))];
     const blob = new Blob(["\ufeff" + lines.join("\n")], { type: "text/csv;charset=utf-8;" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = `registrations-${new Date().toISOString().slice(0, 10)}.csv`;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
-    toast.success(`Exported ${filtered.length} row${filtered.length > 1 ? "s" : ""}`);
+    triggerDownload(blob, `registrations-${new Date().toISOString().slice(0, 10)}.csv`);
+    toast.success(`Exported ${filtered.length} row${filtered.length > 1 ? "s" : ""} as CSV`);
+  }
+
+  function exportXls() {
+    if (filtered.length === 0) return toast.error("Nothing to export");
+    const { headers, data } = buildExportRows();
+    const esc = (v: unknown) =>
+      String(v ?? "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+    const thead = `<tr>${headers.map((h) => `<th style="background:#0a1f44;color:#fff">${esc(h)}</th>`).join("")}</tr>`;
+    const tbody = data
+      .map((row) => `<tr>${row.map((c) => `<td>${esc(c)}</td>`).join("")}</tr>`)
+      .join("");
+    const html = `<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel">
+<head><meta charset="utf-8"/></head>
+<body><table border="1">${thead}${tbody}</table></body></html>`;
+    const blob = new Blob(["\ufeff" + html], { type: "application/vnd.ms-excel" });
+    triggerDownload(blob, `registrations-${new Date().toISOString().slice(0, 10)}.xls`);
+    toast.success(`Exported ${filtered.length} row${filtered.length > 1 ? "s" : ""} as XLS`);
   }
 
   async function deleteRow(id: string) {

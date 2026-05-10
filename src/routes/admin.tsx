@@ -97,6 +97,7 @@ function AdminDashboard() {
     { key: "raffle", label: "Raffle", icon: Ticket },
     { key: "awards", label: "Awards", icon: AwardIcon },
     { key: "members", label: "Leadership & Board", icon: Crown },
+    { key: "users", label: "Admin users", icon: Users },
     { key: "settings", label: "Settings", icon: SettingsIcon },
   ];
 
@@ -174,6 +175,7 @@ function AdminDashboard() {
             {section === "raffle" && <RafflePanel />}
             {section === "awards" && <AwardsPanel />}
             {section === "members" && <MembersPanel />}
+            {section === "users" && <UsersPanel />}
             {section === "settings" && <SettingsPanel />}
           </main>
         </div>

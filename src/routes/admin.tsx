@@ -20,8 +20,13 @@ import { Badge } from "@/components/ui/badge";
 import { TIERS, formatNGN } from "@/lib/tiers";
 import { fetchBankInfo, saveBankInfo, DEFAULT_BANK, type BankInfo } from "@/lib/settings";
 import { toast } from "sonner";
-import { LogOut, Search, Users, Wallet, Crown, RefreshCw, Plus, Trash2, Pencil, Upload, Download } from "lucide-react";
+import { LogOut, Search, Users, Wallet, Crown, RefreshCw, Plus, Trash2, Pencil, Upload, Download, LayoutDashboard, Handshake, Ticket, Award as AwardIcon, Settings as SettingsIcon, ExternalLink, Eye, Printer, Info } from "lucide-react";
 import type { Database } from "@/integrations/supabase/types";
+import {
+  Sidebar, SidebarContent, SidebarGroup, SidebarGroupContent, SidebarGroupLabel,
+  SidebarMenu, SidebarMenuItem, SidebarMenuButton, SidebarProvider, SidebarTrigger, SidebarFooter,
+} from "@/components/ui/sidebar";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
 type Registration = Database["public"]["Tables"]["registrations"]["Row"];
 type Member = {
@@ -85,52 +90,96 @@ function AdminDashboard() {
   }
   if (!isAdmin) return null;
 
-  return (
-    <div className="min-h-screen bg-background">
-      <header className="border-b border-border bg-sidebar text-sidebar-foreground">
-        <div className="container mx-auto px-6 py-4 flex items-center justify-between">
-          <div>
-            <p className="font-display text-xl font-bold">Admin Dashboard</p>
-            <p className="text-xs text-sidebar-foreground/70">Rotary Choba-Uniport · 16th Installation</p>
-          </div>
-          <div className="flex items-center gap-2">
-            <Button asChild variant="ghost" size="sm" className="text-sidebar-foreground hover:bg-sidebar-accent">
-              <Link to="/">View site</Link>
-            </Button>
-            <Button
-              variant="ghost"
-              size="sm"
-              className="text-sidebar-foreground hover:bg-sidebar-accent"
-              onClick={async () => {
-                await supabase.auth.signOut();
-                navigate({ to: "/admin/login" });
-              }}
-            >
-              <LogOut className="size-4 mr-1" /> Sign out
-            </Button>
-          </div>
-        </div>
-      </header>
+  const [section, setSection] = useState<string>("registrations");
 
-      <main className="container mx-auto px-6 py-8">
-        <Tabs defaultValue="registrations" className="w-full">
-          <TabsList className="mb-6 flex-wrap h-auto">
-            <TabsTrigger value="registrations">Registrations</TabsTrigger>
-            <TabsTrigger value="sponsorships">Sponsorships</TabsTrigger>
-            <TabsTrigger value="raffle">Raffle</TabsTrigger>
-            <TabsTrigger value="awards">Awards</TabsTrigger>
-            <TabsTrigger value="members">Leadership &amp; Board</TabsTrigger>
-            <TabsTrigger value="settings">Settings</TabsTrigger>
-          </TabsList>
-          <TabsContent value="registrations"><RegistrationsPanel /></TabsContent>
-          <TabsContent value="sponsorships"><SponsorshipsPanel /></TabsContent>
-          <TabsContent value="raffle"><RafflePanel /></TabsContent>
-          <TabsContent value="awards"><AwardsPanel /></TabsContent>
-          <TabsContent value="members"><MembersPanel /></TabsContent>
-          <TabsContent value="settings"><SettingsPanel /></TabsContent>
-        </Tabs>
-      </main>
-    </div>
+  const navItems = [
+    { key: "registrations", label: "Registrations", icon: Users },
+    { key: "sponsorships", label: "Sponsorships", icon: Handshake },
+    { key: "raffle", label: "Raffle", icon: Ticket },
+    { key: "awards", label: "Awards", icon: AwardIcon },
+    { key: "members", label: "Leadership & Board", icon: Crown },
+    { key: "settings", label: "Settings", icon: SettingsIcon },
+  ];
+
+  return (
+    <SidebarProvider>
+      <div className="min-h-screen flex w-full bg-background">
+        <Sidebar collapsible="icon">
+          <SidebarContent>
+            <div className="px-4 py-4 border-b">
+              <p className="font-display text-base font-bold text-primary">Admin</p>
+              <p className="text-[10px] text-muted-foreground">Rotary Choba-Uniport</p>
+            </div>
+            <SidebarGroup>
+              <SidebarGroupLabel>Manage</SidebarGroupLabel>
+              <SidebarGroupContent>
+                <SidebarMenu>
+                  {navItems.map((item) => (
+                    <SidebarMenuItem key={item.key}>
+                      <SidebarMenuButton
+                        isActive={section === item.key}
+                        onClick={() => setSection(item.key)}
+                        tooltip={item.label}
+                      >
+                        <item.icon className="size-4" />
+                        <span>{item.label}</span>
+                      </SidebarMenuButton>
+                    </SidebarMenuItem>
+                  ))}
+                </SidebarMenu>
+              </SidebarGroupContent>
+            </SidebarGroup>
+            <SidebarGroup>
+              <SidebarGroupLabel>Quick links</SidebarGroupLabel>
+              <SidebarGroupContent>
+                <SidebarMenu>
+                  <SidebarMenuItem>
+                    <SidebarMenuButton asChild tooltip="View site">
+                      <Link to="/"><ExternalLink className="size-4" /><span>View site</span></Link>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                  <SidebarMenuItem>
+                    <SidebarMenuButton asChild tooltip="Receipt lookup">
+                      <Link to="/receipt"><LayoutDashboard className="size-4" /><span>Receipt lookup</span></Link>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                </SidebarMenu>
+              </SidebarGroupContent>
+            </SidebarGroup>
+          </SidebarContent>
+          <SidebarFooter>
+            <SidebarMenu>
+              <SidebarMenuItem>
+                <SidebarMenuButton
+                  tooltip="Sign out"
+                  onClick={async () => { await supabase.auth.signOut(); navigate({ to: "/admin/login" }); }}
+                >
+                  <LogOut className="size-4" /><span>Sign out</span>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+            </SidebarMenu>
+          </SidebarFooter>
+        </Sidebar>
+
+        <div className="flex-1 flex flex-col min-w-0">
+          <header className="h-14 flex items-center gap-3 border-b border-border bg-sidebar text-sidebar-foreground px-4">
+            <SidebarTrigger className="text-sidebar-foreground" />
+            <div className="flex-1">
+              <p className="font-display text-lg font-bold capitalize">{navItems.find((n) => n.key === section)?.label ?? "Admin"}</p>
+              <p className="text-[11px] text-sidebar-foreground/70">16th Installation Dashboard</p>
+            </div>
+          </header>
+          <main className="flex-1 container mx-auto px-6 py-8">
+            {section === "registrations" && <RegistrationsPanel />}
+            {section === "sponsorships" && <SponsorshipsPanel />}
+            {section === "raffle" && <RafflePanel />}
+            {section === "awards" && <AwardsPanel />}
+            {section === "members" && <MembersPanel />}
+            {section === "settings" && <SettingsPanel />}
+          </main>
+        </div>
+      </div>
+    </SidebarProvider>
   );
 }
 
@@ -139,6 +188,8 @@ function RegistrationsPanel() {
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [tierFilter, setTierFilter] = useState<string>("all");
+
+  const [detail, setDetail] = useState<Registration | null>(null);
 
   useEffect(() => { void loadRows(); }, []);
 
@@ -308,7 +359,8 @@ function RegistrationsPanel() {
                     {new Date(r.created_at).toLocaleDateString("en-NG", { day: "2-digit", month: "short", year: "numeric" })}
                   </TableCell>
                   <TableCell className="text-right space-x-1">
-                    <Button asChild size="sm" variant="ghost"><Link to="/receipt">View</Link></Button>
+                    <Button size="sm" variant="ghost" onClick={() => setDetail(r)}><Eye className="size-4 mr-1" />View</Button>
+                    <Button size="sm" variant="ghost" onClick={() => printSlip(r)} title="Print slip"><Printer className="size-4" /></Button>
                     <Button size="sm" variant="ghost" className="text-destructive hover:text-destructive" onClick={() => deleteRow(r.id)}>Delete</Button>
                   </TableCell>
                 </TableRow>
@@ -317,7 +369,119 @@ function RegistrationsPanel() {
           </Table>
         </div>
       </Card>
+
+      <RegistrationDetailDialog
+        registration={detail}
+        open={!!detail}
+        onOpenChange={(v) => { if (!v) setDetail(null); }}
+        onPrint={(r) => printSlip(r)}
+      />
     </>
+  );
+}
+
+function printSlip(r: Registration) {
+  const ref = r.id.slice(0, 8).toUpperCase();
+  const html = `<!doctype html><html><head><meta charset="utf-8"/><title>Slip ${ref}</title>
+    <style>
+      body{font-family:system-ui,-apple-system,sans-serif;padding:32px;color:#0a1f44;max-width:640px;margin:auto}
+      h1{color:#0a1f44;margin:0 0 4px;font-size:22px}
+      .muted{color:#666;font-size:12px}
+      table{width:100%;border-collapse:collapse;margin-top:16px}
+      td{padding:8px 4px;border-bottom:1px solid #eee;font-size:14px;vertical-align:top}
+      td:first-child{color:#666;width:40%}
+      .ref{font-family:ui-monospace,monospace;font-size:18px;font-weight:700;letter-spacing:1px;background:#f5f0e0;padding:8px 12px;border-radius:6px;display:inline-block;margin-top:8px}
+      .badge{display:inline-block;padding:2px 8px;border-radius:4px;background:#0a1f44;color:#fff;font-size:11px;text-transform:uppercase}
+      @media print{button{display:none}}
+    </style></head><body>
+    <h1>Rotary Club of Choba-Uniport</h1>
+    <p class="muted">16th Installation · Registration Slip</p>
+    <div class="ref">REF: ${ref}</div>
+    <table>
+      <tr><td>Attendee</td><td>${[r.title, r.full_name].filter(Boolean).join(" ")}</td></tr>
+      <tr><td>Email</td><td>${r.email ?? "—"}</td></tr>
+      <tr><td>Phone</td><td>${r.phone}</td></tr>
+      <tr><td>Position / Org</td><td>${[r.position, r.organization].filter(Boolean).join(" · ") || "—"}</td></tr>
+      <tr><td>Rotary Club</td><td>${r.rotary_club ?? "—"}</td></tr>
+      <tr><td>Address</td><td>${r.address ?? "—"}</td></tr>
+      <tr><td>Tier</td><td><span class="badge">${r.tier.toUpperCase()}</span></td></tr>
+      <tr><td>Amount</td><td><strong>₦${r.amount.toLocaleString()}</strong></td></tr>
+      <tr><td>Guests</td><td>${r.guests_count}</td></tr>
+      <tr><td>Payment method</td><td>${r.payment_method}</td></tr>
+      <tr><td>Payment status</td><td>${r.payment_status}</td></tr>
+      <tr><td>Reference</td><td style="font-family:ui-monospace,monospace">${r.payment_reference ?? "—"}</td></tr>
+      <tr><td>Registered</td><td>${new Date(r.created_at).toLocaleString()}</td></tr>
+    </table>
+    <p class="muted" style="margin-top:24px">Please present this slip at the venue.</p>
+    <button onclick="window.print()" style="margin-top:16px;padding:8px 16px;background:#0a1f44;color:#fff;border:0;border-radius:6px;cursor:pointer">Print</button>
+    </body></html>`;
+  const w = window.open("", "_blank", "width=720,height=900");
+  if (!w) { toast.error("Pop-up blocked"); return; }
+  w.document.write(html);
+  w.document.close();
+}
+
+function RegistrationDetailDialog({ registration, open, onOpenChange, onPrint }: {
+  registration: Registration | null;
+  open: boolean;
+  onOpenChange: (v: boolean) => void;
+  onPrint: (r: Registration) => void;
+}) {
+  if (!registration) return null;
+  const r = registration;
+  const ref = r.id.slice(0, 8).toUpperCase();
+  const rows: Array<[string, React.ReactNode]> = [
+    ["Reference", <span className="font-mono font-semibold">{ref}</span>],
+    ["Full ID", <span className="font-mono text-xs break-all">{r.id}</span>],
+    ["Title", r.title || "—"],
+    ["Full name", r.full_name],
+    ["Email", r.email || "—"],
+    ["Phone", r.phone],
+    ["Position", r.position || "—"],
+    ["Organization", r.organization || "—"],
+    ["Occupation", r.occupation || "—"],
+    ["Rotary club", r.rotary_club || "—"],
+    ["Address", r.address || "—"],
+    ["Tier", r.tier.toUpperCase()],
+    ["Amount", formatNGN(r.amount)],
+    ["Guests", r.guests_count],
+    ["Payment method", r.payment_method],
+    ["Payment status", r.payment_status],
+    ["Payment reference", r.payment_reference || "—"],
+    ["Notes", r.notes || "—"],
+    ["Created", new Date(r.created_at).toLocaleString()],
+    ["Last updated", new Date(r.updated_at).toLocaleString()],
+  ];
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle>Registration details · {ref}</DialogTitle>
+        </DialogHeader>
+        <div className="grid gap-px bg-border rounded-md overflow-hidden text-sm">
+          {rows.map(([k, v]) => (
+            <div key={k} className="grid grid-cols-[160px_1fr] gap-2 bg-card p-3">
+              <div className="text-muted-foreground">{k}</div>
+              <div className="break-words">{v}</div>
+            </div>
+          ))}
+        </div>
+        {r.payment_proof_url && (
+          <div className="mt-2">
+            <p className="text-xs text-muted-foreground mb-1">Payment proof</p>
+            <a href={r.payment_proof_url} target="_blank" rel="noreferrer">
+              <img src={r.payment_proof_url} alt="Payment proof" className="max-h-72 rounded border" />
+            </a>
+          </div>
+        )}
+        <DialogFooter className="gap-2 sm:gap-2">
+          <Button variant="outline" onClick={() => onOpenChange(false)}>Close</Button>
+          <Button onClick={() => onPrint(r)} className="bg-primary text-primary-foreground">
+            <Printer className="size-4 mr-1" /> Print slip
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 }
 
@@ -511,7 +675,19 @@ function MemberDialog({ open, onOpenChange, member, onSaved }: {
               </Select>
             </div>
             <div className="grid gap-2">
-              <Label>Display order</Label>
+              <Label className="flex items-center gap-1">
+                Display order
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Info className="size-3 text-muted-foreground cursor-help" />
+                    </TooltipTrigger>
+                    <TooltipContent className="max-w-xs">
+                      Lower numbers appear first. Use 1, 2, 3… to reorder how members show on the homepage.
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+              </Label>
               <Input type="number" value={sortOrder} onChange={(e) => setSortOrder(parseInt(e.target.value) || 0)} />
             </div>
           </div>

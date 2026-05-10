@@ -301,8 +301,11 @@ function RegistrationsPanel() {
         <Button variant="outline" onClick={loadRows} disabled={loading}>
           <RefreshCw className={`size-4 mr-1 ${loading ? "animate-spin" : ""}`} /> Refresh
         </Button>
-        <Button onClick={exportCsv} disabled={loading || filtered.length === 0} className="bg-primary text-primary-foreground hover:bg-primary/90">
-          <Download className="size-4 mr-1" /> Export CSV
+        <Button onClick={exportCsv} disabled={loading || filtered.length === 0} variant="outline">
+          <Download className="size-4 mr-1" /> CSV
+        </Button>
+        <Button onClick={exportXls} disabled={loading || filtered.length === 0} className="bg-primary text-primary-foreground hover:bg-primary/90">
+          <Download className="size-4 mr-1" /> Excel (XLS)
         </Button>
       </Card>
 

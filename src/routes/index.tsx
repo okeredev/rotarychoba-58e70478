@@ -75,6 +75,7 @@ function Landing() {
             <a href="#leadership" className="text-foreground/80 hover:text-primary transition">Leadership</a>
             <a href="#awards" className="text-foreground/80 hover:text-primary transition">Awards</a>
             <Link to="/sponsor" className="text-foreground/80 hover:text-primary transition">Sponsor</Link>
+            <Link to="/raffle" className="text-foreground/80 hover:text-primary transition">Raffle</Link>
             <Link to="/receipt" className="text-foreground/80 hover:text-primary transition">My slip</Link>
             <Button asChild size="sm" className="bg-primary text-primary-foreground hover:bg-primary/90">
               <Link to="/register">Register</Link>
@@ -354,6 +355,7 @@ function Landing() {
             <Link to="/" className="text-sidebar-foreground/70 hover:text-gold">Home</Link>
             <Link to="/register" className="text-sidebar-foreground/70 hover:text-gold">Register</Link>
             <Link to="/sponsor" className="text-sidebar-foreground/70 hover:text-gold">Sponsor</Link>
+            <Link to="/raffle" className="text-sidebar-foreground/70 hover:text-gold">Raffle</Link>
             <Link to="/receipt" className="text-sidebar-foreground/70 hover:text-gold">My slip</Link>
             <a href="#awards" className="text-sidebar-foreground/70 hover:text-gold">Awards</a>
             

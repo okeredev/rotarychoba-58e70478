@@ -305,3 +305,72 @@ function Row({ label, value, k, copy, copied, mono }: { label: string; value: st
     </div>
   );
 }
+
+function RaffleProofUpload({ saleId }: { saleId: string }) {
+  const [uploading, setUploading] = useState(false);
+  const [uploadedUrl, setUploadedUrl] = useState<string | null>(null);
+
+  async function handleFile(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (!file.type.startsWith("image/")) {
+      toast.error("Please upload an image (PNG/JPG)");
+      return;
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error("Image must be under 5 MB");
+      return;
+    }
+    setUploading(true);
+    const ext = file.name.split(".").pop()?.toLowerCase() || "jpg";
+    const path = `raffle/${saleId}/${Date.now()}.${ext}`;
+    const { error: upErr } = await supabase.storage
+      .from("payment-proofs")
+      .upload(path, file, { upsert: false, contentType: file.type });
+    if (upErr) {
+      setUploading(false);
+      toast.error(upErr.message);
+      return;
+    }
+    const { data: pub } = supabase.storage.from("payment-proofs").getPublicUrl(path);
+    const url = pub.publicUrl;
+    const { error: rpcErr } = await supabase.rpc("attach_raffle_payment_proof", {
+      sale_id: saleId,
+      proof_url: url,
+    });
+    setUploading(false);
+    if (rpcErr) {
+      toast.error(rpcErr.message);
+      return;
+    }
+    setUploadedUrl(url);
+    toast.success("Payment proof uploaded");
+  }
+
+  if (uploadedUrl) {
+    return (
+      <div className="rounded-lg border-2 border-primary/30 bg-secondary/40 p-4">
+        <p className="font-semibold text-primary flex items-center gap-2">
+          <Check className="size-4" /> Payment proof received
+        </p>
+        <p className="mt-1 text-xs text-foreground/60">
+          The secretariat will verify and confirm your tickets.
+        </p>
+        <a href={uploadedUrl} target="_blank" rel="noreferrer" className="mt-3 inline-flex items-center gap-2 text-xs text-primary hover:underline">
+          <ImageIcon className="size-3.5" /> View uploaded screenshot
+        </a>
+      </div>
+    );
+  }
+
+  return (
+    <label className="block rounded-lg border-2 border-dashed border-primary/40 bg-card hover:bg-secondary/50 transition cursor-pointer p-5 text-center">
+      <Upload className="size-6 mx-auto text-primary" />
+      <p className="mt-2 font-semibold text-primary">
+        {uploading ? "Uploading…" : "Upload payment proof"}
+      </p>
+      <p className="text-xs text-foreground/60 mt-1">PNG or JPG, up to 5 MB</p>
+      <input type="file" accept="image/*" className="sr-only" onChange={handleFile} disabled={uploading} />
+    </label>
+  );
+}

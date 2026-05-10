@@ -90,52 +90,96 @@ function AdminDashboard() {
   }
   if (!isAdmin) return null;
 
-  return (
-    <div className="min-h-screen bg-background">
-      <header className="border-b border-border bg-sidebar text-sidebar-foreground">
-        <div className="container mx-auto px-6 py-4 flex items-center justify-between">
-          <div>
-            <p className="font-display text-xl font-bold">Admin Dashboard</p>
-            <p className="text-xs text-sidebar-foreground/70">Rotary Choba-Uniport · 16th Installation</p>
-          </div>
-          <div className="flex items-center gap-2">
-            <Button asChild variant="ghost" size="sm" className="text-sidebar-foreground hover:bg-sidebar-accent">
-              <Link to="/">View site</Link>
-            </Button>
-            <Button
-              variant="ghost"
-              size="sm"
-              className="text-sidebar-foreground hover:bg-sidebar-accent"
-              onClick={async () => {
-                await supabase.auth.signOut();
-                navigate({ to: "/admin/login" });
-              }}
-            >
-              <LogOut className="size-4 mr-1" /> Sign out
-            </Button>
-          </div>
-        </div>
-      </header>
+  const [section, setSection] = useState<string>("registrations");
 
-      <main className="container mx-auto px-6 py-8">
-        <Tabs defaultValue="registrations" className="w-full">
-          <TabsList className="mb-6 flex-wrap h-auto">
-            <TabsTrigger value="registrations">Registrations</TabsTrigger>
-            <TabsTrigger value="sponsorships">Sponsorships</TabsTrigger>
-            <TabsTrigger value="raffle">Raffle</TabsTrigger>
-            <TabsTrigger value="awards">Awards</TabsTrigger>
-            <TabsTrigger value="members">Leadership &amp; Board</TabsTrigger>
-            <TabsTrigger value="settings">Settings</TabsTrigger>
-          </TabsList>
-          <TabsContent value="registrations"><RegistrationsPanel /></TabsContent>
-          <TabsContent value="sponsorships"><SponsorshipsPanel /></TabsContent>
-          <TabsContent value="raffle"><RafflePanel /></TabsContent>
-          <TabsContent value="awards"><AwardsPanel /></TabsContent>
-          <TabsContent value="members"><MembersPanel /></TabsContent>
-          <TabsContent value="settings"><SettingsPanel /></TabsContent>
-        </Tabs>
-      </main>
-    </div>
+  const navItems = [
+    { key: "registrations", label: "Registrations", icon: Users },
+    { key: "sponsorships", label: "Sponsorships", icon: Handshake },
+    { key: "raffle", label: "Raffle", icon: Ticket },
+    { key: "awards", label: "Awards", icon: AwardIcon },
+    { key: "members", label: "Leadership & Board", icon: Crown },
+    { key: "settings", label: "Settings", icon: SettingsIcon },
+  ];
+
+  return (
+    <SidebarProvider>
+      <div className="min-h-screen flex w-full bg-background">
+        <Sidebar collapsible="icon">
+          <SidebarContent>
+            <div className="px-4 py-4 border-b">
+              <p className="font-display text-base font-bold text-primary">Admin</p>
+              <p className="text-[10px] text-muted-foreground">Rotary Choba-Uniport</p>
+            </div>
+            <SidebarGroup>
+              <SidebarGroupLabel>Manage</SidebarGroupLabel>
+              <SidebarGroupContent>
+                <SidebarMenu>
+                  {navItems.map((item) => (
+                    <SidebarMenuItem key={item.key}>
+                      <SidebarMenuButton
+                        isActive={section === item.key}
+                        onClick={() => setSection(item.key)}
+                        tooltip={item.label}
+                      >
+                        <item.icon className="size-4" />
+                        <span>{item.label}</span>
+                      </SidebarMenuButton>
+                    </SidebarMenuItem>
+                  ))}
+                </SidebarMenu>
+              </SidebarGroupContent>
+            </SidebarGroup>
+            <SidebarGroup>
+              <SidebarGroupLabel>Quick links</SidebarGroupLabel>
+              <SidebarGroupContent>
+                <SidebarMenu>
+                  <SidebarMenuItem>
+                    <SidebarMenuButton asChild tooltip="View site">
+                      <Link to="/"><ExternalLink className="size-4" /><span>View site</span></Link>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                  <SidebarMenuItem>
+                    <SidebarMenuButton asChild tooltip="Receipt lookup">
+                      <Link to="/receipt"><LayoutDashboard className="size-4" /><span>Receipt lookup</span></Link>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                </SidebarMenu>
+              </SidebarGroupContent>
+            </SidebarGroup>
+          </SidebarContent>
+          <SidebarFooter>
+            <SidebarMenu>
+              <SidebarMenuItem>
+                <SidebarMenuButton
+                  tooltip="Sign out"
+                  onClick={async () => { await supabase.auth.signOut(); navigate({ to: "/admin/login" }); }}
+                >
+                  <LogOut className="size-4" /><span>Sign out</span>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+            </SidebarMenu>
+          </SidebarFooter>
+        </Sidebar>
+
+        <div className="flex-1 flex flex-col min-w-0">
+          <header className="h-14 flex items-center gap-3 border-b border-border bg-sidebar text-sidebar-foreground px-4">
+            <SidebarTrigger className="text-sidebar-foreground" />
+            <div className="flex-1">
+              <p className="font-display text-lg font-bold capitalize">{navItems.find((n) => n.key === section)?.label ?? "Admin"}</p>
+              <p className="text-[11px] text-sidebar-foreground/70">16th Installation Dashboard</p>
+            </div>
+          </header>
+          <main className="flex-1 container mx-auto px-6 py-8">
+            {section === "registrations" && <RegistrationsPanel />}
+            {section === "sponsorships" && <SponsorshipsPanel />}
+            {section === "raffle" && <RafflePanel />}
+            {section === "awards" && <AwardsPanel />}
+            {section === "members" && <MembersPanel />}
+            {section === "settings" && <SettingsPanel />}
+          </main>
+        </div>
+      </div>
+    </SidebarProvider>
   );
 }
 

@@ -1,7 +1,16 @@
-// Use Node.js runtime to avoid Edge compiler import limitations
+import server from '../dist/server/index.js';
 
-import app from '../dist/server/server.js';
+export const config = {
+  runtime: 'edge',
+};
 
 export default async function handler(request) {
-  return app.fetch(request, process.env, {});
+  // Extract standard Cloudflare/Edge fetch arguments
+  const env = process.env || {};
+  const ctx = {
+    waitUntil: () => {},
+    passThroughOnException: () => {}
+  };
+  
+  return await server.fetch(request, env, ctx);
 }

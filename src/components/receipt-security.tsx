@@ -43,7 +43,7 @@ export function ReceiptVerifyBlock({
   issuedAt: string;
   status: "PROVISIONAL" | "OFFICIAL";
 }) {
-  const origin = typeof window !== "undefined" ? window.location.origin : "";
+  const origin = "https://www.rotaryclubofchobauniport.org";
   const verifyUrl = `${origin}/receipt?ref=${encodeURIComponent(reference)}`;
   const isOfficial = status === "OFFICIAL";
 

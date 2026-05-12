@@ -36,7 +36,7 @@ function AdminLogin() {
         const { error } = await supabase.auth.signUp({
           email,
           password,
-          options: { emailRedirectTo: `${window.location.origin}/admin` },
+          options: { emailRedirectTo: `https://www.rotaryclubofchobauniport.org/admin` },
         });
         if (error) throw error;
         toast.success("Admin account created. You're signed in.");

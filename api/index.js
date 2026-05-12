@@ -1,6 +1,4 @@
-export const config = {
-  runtime: 'edge',
-};
+// Use Node.js runtime to avoid Edge compiler import limitations
 
 import app from '../dist/server/server.js';
 

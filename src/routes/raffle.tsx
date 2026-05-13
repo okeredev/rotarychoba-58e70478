@@ -47,6 +47,7 @@ type PaymentChoice = "pay_now" | "pay_at_venue";
 function RafflePage() {
   const [bank, setBank] = useState<BankInfo>(DEFAULT_BANK);
   const [pack, setPack] = useState<PackKey>("single");
+  const [qty, setQty] = useState(1);
   const [paymentChoice, setPaymentChoice] = useState<PaymentChoice>("pay_now");
   const [submitting, setSubmitting] = useState(false);
   const [done, setDone] = useState<{ id: string; amount: number; qty: number; payment_method: PaymentChoice } | null>(null);
@@ -91,8 +92,8 @@ function RafflePage() {
           buyer_phone: parsed.data.buyer_phone,
           buyer_email: parsed.data.buyer_email || null,
           pack: parsed.data.pack,
-          qty: p.qty,
-          amount: p.price,
+          qty: qty,
+          amount: p.price * qty,
           reference: parsed.data.reference || null,
           payment_method: paymentChoice,
         })
@@ -211,6 +212,19 @@ function RafflePage() {
               </div>
 
               <div>
+                <Label htmlFor="qty" className="mb-2 block">How many?</Label>
+                <Input
+                  id="qty"
+                  type="number"
+                  min={1}
+                  max={100}
+                  value={qty}
+                  onChange={(e) => setQty(Math.max(1, parseInt(e.target.value) || 1))}
+                  className="w-full sm:max-w-[200px]"
+                />
+              </div>
+
+              <div>
                 <Label className="mb-2 block">How would you like to pay?</Label>
                 <RadioGroup
                   value={paymentChoice}
@@ -268,7 +282,7 @@ function RafflePage() {
                 </div>
               )}
               <Button type="submit" disabled={submitting} className="w-full bg-primary text-primary-foreground">
-                {submitting ? "Reserving…" : `Reserve ${PACKS[pack].label} — ₦${PACKS[pack].price.toLocaleString()}`}
+                {submitting ? "Reserving…" : `Reserve ${qty} ${PACKS[pack].label} — ₦${(PACKS[pack].price * qty).toLocaleString()}`}
               </Button>
               <p className="text-xs text-foreground/60 text-center">
                 Your reference will appear on the next screen — keep it safe and present it on collection day.

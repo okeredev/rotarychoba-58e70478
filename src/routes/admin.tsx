@@ -1142,13 +1142,21 @@ function RafflePanel() {
                   <TableCell className="text-xs text-muted-foreground">{new Date(r.created_at).toLocaleString()}</TableCell>
                   <TableCell><div className="font-medium">{r.buyer_name}</div><div className="text-xs text-muted-foreground">{r.buyer_phone}</div></TableCell>
                   <TableCell>{r.pack === "pack20" ? "Pack of 20" : "Single"}</TableCell>
-                  <TableCell>{r.qty}</TableCell>
+                  <TableCell>
+                    <div className="font-medium">{r.qty} {r.pack === "pack20" ? "pack(s)" : "ticket(s)"}</div>
+                    <div className="text-[10px] text-muted-foreground uppercase">
+                      Total: {r.qty * (r.pack === "pack20" ? 20 : 1)} tickets
+                    </div>
+                  </TableCell>
                   <TableCell>{formatNGN(r.amount)}</TableCell>
                   <TableCell className="text-xs">{r.payment_method === "pay_now" ? "Transfer" : "At venue"}</TableCell>
                   <TableCell>
                     {r.payment_proof_url ? (
-                      <a href={r.payment_proof_url} target="_blank" rel="noreferrer" className="text-primary hover:underline inline-flex items-center gap-1 text-xs">
-                        <Eye className="size-3.5" /> View
+                      <a href={r.payment_proof_url} target="_blank" rel="noreferrer" className="text-primary hover:underline inline-flex items-center gap-1 text-xs font-medium">
+                        <Eye className="size-3.5" /> View proof
+                        {r.payment_status === "pending" && (
+                          <span className="size-2 rounded-full bg-amber-500 animate-pulse ml-1" title="New proof to verify" />
+                        )}
                       </a>
                     ) : (
                       <span className="text-xs text-muted-foreground">—</span>
@@ -1160,8 +1168,9 @@ function RafflePanel() {
                       <SelectTrigger className="h-8 w-32"><SelectValue /></SelectTrigger>
                       <SelectContent>
                         <SelectItem value="pending">Pending</SelectItem>
-                        <SelectItem value="paid">Paid</SelectItem>
-                        <SelectItem value="cancelled">Cancelled</SelectItem>
+                        <SelectItem value="pay_at_venue">At venue</SelectItem>
+                        <SelectItem value="paid">Paid (Approved)</SelectItem>
+                        <SelectItem value="cancelled">Cancelled (Rejected)</SelectItem>
                       </SelectContent>
                     </Select>
                   </TableCell>

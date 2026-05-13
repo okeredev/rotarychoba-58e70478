@@ -100,7 +100,7 @@ function RafflePage() {
         .select("id, amount, qty, payment_method")
         .single();
       if (error) throw error;
-      setDone({ id: data.id, amount: data.amount, qty: data.qty, payment_method: paymentChoice });
+      setDone({ id: data.id, amount: data.amount, qty: data.qty, payment_method: paymentChoice, buyer_phone: parsed.data.buyer_phone });
       toast.success(
         paymentChoice === "pay_now"
           ? "Reserved! Pay via bank transfer and upload your proof below."

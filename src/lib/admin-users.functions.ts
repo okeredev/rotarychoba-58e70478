@@ -5,8 +5,6 @@ import { supabaseAdmin } from "@/integrations/supabase/client.server";
 
 // Verify caller is admin or super_admin.
 async function assertAdmin(supabase: any, userId: string, claims: any, requireSuper: boolean = false) {
-  const isMainAdmin = claims?.email === "cryptobountiesupdates@gmail.com";
-
   const { data } = await supabase
     .from("user_roles")
     .select("role, status")
@@ -15,11 +13,11 @@ async function assertAdmin(supabase: any, userId: string, claims: any, requireSu
 
   const hasRole = data && data.status === "approved";
   
-  if (!isMainAdmin && (!data || !hasRole)) {
+  if (!data || !hasRole) {
     throw new Response("Forbidden: approved admin only", { status: 403 });
   }
 
-  const role = isMainAdmin ? "super_admin" : data?.role;
+  const role = data?.role;
 
   if (requireSuper && role !== "super_admin") {
     throw new Response("Forbidden: super_admin only", { status: 403 });

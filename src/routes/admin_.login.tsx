@@ -12,7 +12,7 @@ export const Route = createFileRoute("/admin_/login")({
   component: AdminLogin,
 });
 
-const ADMIN_EMAIL = "cryptobountiesupdates@gmail.com";
+
 
 function AdminLogin() {
   const navigate = useNavigate();
@@ -47,7 +47,7 @@ function AdminLogin() {
           const { error: roleErr } = await supabase.from("user_roles").insert({
             user_id: up.user.id,
             role: "admin",
-            status: email === ADMIN_EMAIL ? "approved" : "pending",
+            status: "pending",
             email: email,
           });
           // We ignore duplicate errors if the user already has a role

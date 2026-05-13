@@ -66,8 +66,7 @@ function AdminDashboard() {
         .maybeSingle();
 
       if (!active) return;
-      const isMainAdmin = session.user.email === "cryptobountiesupdates@gmail.com";
-      const hasAccess = isMainAdmin || (roleData && roleData.status === "approved");
+      const hasAccess = roleData && roleData.status === "approved";
 
       if (!active) return;
       if (!hasAccess) {

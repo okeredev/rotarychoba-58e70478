@@ -40,8 +40,16 @@ export const listAdmins = createServerFn({ method: "GET" })
   .handler(async ({ context }): Promise<{ admins: AdminUser[] }> => {
     await assertAdmin(context.supabase, context.userId, context.claims);
 
-    // Try to fetch from the roles table (including our new email column)
-    const { data: roles, error } = await context.supabase
+    // Use supabaseAdmin if available to bypass RLS and see all users.
+    // Otherwise fall back to context.supabase.
+    let client = context.supabase;
+    try {
+      if (supabaseAdmin) client = supabaseAdmin;
+    } catch (e) {
+       console.log("Using user client as fallback");
+    }
+
+    const { data: roles, error } = await client
       .from("user_roles")
       .select("user_id, role, status, created_at, email")
       .in("role", ["admin", "super_admin"]);

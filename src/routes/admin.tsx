@@ -1357,9 +1357,11 @@ function UsersPanel() {
     setLoading(true);
     try {
       const res = await listFn();
-      setAdmins(res.admins);
+      setAdmins(res?.admins || []);
     } catch (err) {
+      console.error("List admins error:", err);
       toast.error("Failed to load admin users");
+      setAdmins([]);
     } finally {
       setLoading(false);
     }
@@ -1448,10 +1450,10 @@ function UsersPanel() {
           <TableBody>
             {loading ? (
               <TableRow><TableCell colSpan={4} className="text-center py-12 text-muted-foreground">Loading users...</TableCell></TableRow>
-            ) : admins.length === 0 ? (
+            ) : (admins?.length || 0) === 0 ? (
               <TableRow><TableCell colSpan={4} className="text-center py-12 text-muted-foreground">No admin users found.</TableCell></TableRow>
             ) : (
-              admins.map((u) => (
+              (admins || []).map((u) => (
                 <TableRow key={u.user_id}>
                   <TableCell>
                     <div className="font-medium">{u.email}</div>

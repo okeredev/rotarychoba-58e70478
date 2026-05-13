@@ -272,7 +272,7 @@ export type Database = {
           email: string | null
           id: string
           role: Database["public"]["Enums"]["app_role"]
-          status: string | null
+          status: string
           user_id: string
         }
         Insert: {
@@ -280,7 +280,7 @@ export type Database = {
           email?: string | null
           id?: string
           role: Database["public"]["Enums"]["app_role"]
-          status?: string | null
+          status?: string
           user_id: string
         }
         Update: {
@@ -288,7 +288,7 @@ export type Database = {
           email?: string | null
           id?: string
           role?: Database["public"]["Enums"]["app_role"]
-          status?: string | null
+          status?: string
           user_id?: string
         }
         Relationships: []
@@ -303,7 +303,7 @@ export type Database = {
         Returns: undefined
       }
       attach_raffle_payment_proof: {
-        Args: { proof_url: string; sale_id: string }
+        Args: { buyer_phone_input?: string; proof_url: string; sale_id: string }
         Returns: undefined
       }
       has_role: {

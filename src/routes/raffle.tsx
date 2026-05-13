@@ -50,7 +50,7 @@ function RafflePage() {
   const [qty, setQty] = useState(1);
   const [paymentChoice, setPaymentChoice] = useState<PaymentChoice>("pay_now");
   const [submitting, setSubmitting] = useState(false);
-  const [done, setDone] = useState<{ id: string; amount: number; qty: number; payment_method: PaymentChoice } | null>(null);
+  const [done, setDone] = useState<{ id: string; amount: number; qty: number; payment_method: PaymentChoice; buyer_phone: string } | null>(null);
   const [copied, setCopied] = useState<string | null>(null);
 
   useEffect(() => {
@@ -100,7 +100,7 @@ function RafflePage() {
         .select("id, amount, qty, payment_method")
         .single();
       if (error) throw error;
-      setDone({ id: data.id, amount: data.amount, qty: data.qty, payment_method: paymentChoice });
+      setDone({ id: data.id, amount: data.amount, qty: data.qty, payment_method: paymentChoice, buyer_phone: parsed.data.buyer_phone });
       toast.success(
         paymentChoice === "pay_now"
           ? "Reserved! Pay via bank transfer and upload your proof below."
@@ -169,7 +169,7 @@ function RafflePage() {
             {done.payment_method === "pay_now" ? (
               <>
                 <BankBox bank={bank} copy={copy} copied={copied} />
-                <RaffleProofUpload saleId={done.id} />
+                <RaffleProofUpload saleId={done.id} buyerPhone={done.buyer_phone} />
               </>
             ) : (
               <div className="rounded-lg border border-dashed border-primary/40 bg-secondary/30 p-4 text-sm">
@@ -320,7 +320,7 @@ function Row({ label, value, k, copy, copied, mono }: { label: string; value: st
   );
 }
 
-function RaffleProofUpload({ saleId }: { saleId: string }) {
+function RaffleProofUpload({ saleId, buyerPhone }: { saleId: string; buyerPhone: string }) {
   const [uploading, setUploading] = useState(false);
   const [uploadedUrl, setUploadedUrl] = useState<string | null>(null);
 
@@ -351,6 +351,7 @@ function RaffleProofUpload({ saleId }: { saleId: string }) {
     const { error: rpcErr } = await supabase.rpc("attach_raffle_payment_proof", {
       sale_id: saleId,
       proof_url: url,
+      buyer_phone_input: buyerPhone,
     });
     setUploading(false);
     if (rpcErr) {

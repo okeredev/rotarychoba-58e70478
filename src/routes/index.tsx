@@ -361,7 +361,7 @@ function Landing() {
             
           </div>
           <p className="mt-6 text-[11px] uppercase tracking-widest text-sidebar-foreground/50">
-            Website by <span className="text-gold font-semibold">webserve</span>
+            Website by <span className="text-gold font-semibold">webserve integrated services (2348033577433)</span>
           </p>
         </div>
       </footer>

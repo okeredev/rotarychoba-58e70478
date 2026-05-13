@@ -1365,7 +1365,7 @@ function UsersPanel() {
     if (!inviteEmail.trim()) return;
     setInviting(true);
     try {
-      await inviteFn({ data: { email: inviteEmail.trim(), redirectTo: ${window.location.origin}/admin } });
+      await inviteFn({ data: { email: inviteEmail.trim(), redirectTo: `${window.location.origin}/admin` } });
       toast.success("Admin invited/approved");
       setInviteEmail("");
       void load();
@@ -1379,7 +1379,7 @@ function UsersPanel() {
   async function updateStatus(userId: string, status: "approved" | "rejected") {
     try {
       await statusFn({ data: { user_id: userId, status } });
-      toast.success(User );
+      toast.success(`User ${status}`);
       void load();
     } catch (err) {
       toast.error("Action failed");
@@ -1389,7 +1389,7 @@ function UsersPanel() {
   async function updateRole(userId: string, role: "admin" | "super_admin") {
     try {
       await roleFn({ data: { user_id: userId, role } });
-      toast.success(Role updated to );
+      toast.success(`Role updated to ${role}`);
       void load();
     } catch (err) {
       toast.error("Failed to update role");

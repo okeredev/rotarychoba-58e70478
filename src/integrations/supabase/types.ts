@@ -271,18 +271,21 @@ export type Database = {
           created_at: string
           id: string
           role: Database["public"]["Enums"]["app_role"]
+          status: string
           user_id: string
         }
         Insert: {
           created_at?: string
           id?: string
           role: Database["public"]["Enums"]["app_role"]
+          status?: string
           user_id: string
         }
         Update: {
           created_at?: string
           id?: string
           role?: Database["public"]["Enums"]["app_role"]
+          status?: string
           user_id?: string
         }
         Relationships: []
@@ -326,7 +329,7 @@ export type Database = {
       }
     }
     Enums: {
-      app_role: "admin" | "user"
+      app_role: "admin" | "user" | "super_admin"
       member_category: "incoming" | "board"
       payment_status: "pending" | "pay_at_venue" | "paid" | "cancelled"
       raffle_pack: "single" | "pack20"

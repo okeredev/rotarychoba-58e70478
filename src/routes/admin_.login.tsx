@@ -6,8 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card } from "@/components/ui/card";
 import { toast } from "sonner";
-import { ArrowLeft, ShieldCheck, Wrench } from "lucide-react";
-import { fixSuperAdmin } from "@/lib/fix-admin";
+import { ArrowLeft, ShieldCheck } from "lucide-react";
 
 export const Route = createFileRoute("/admin_/login")({
   component: AdminLogin,
@@ -107,19 +106,6 @@ function AdminLogin() {
             </div>
             <Button type="submit" disabled={loading} className="bg-primary text-primary-foreground hover:bg-primary/90">
               {loading ? "Please wait…" : mode === "signin" ? "Sign in" : "Create admin account"}
-            </Button>
-
-            <Button 
-              type="button" 
-              variant="outline" 
-              className="mt-2 text-xs border-dashed"
-              onClick={async () => {
-                const res = await fixSuperAdmin();
-                if (res.ok) toast.success(res.message);
-                else toast.error(res.error);
-              }}
-            >
-              <Wrench className="size-3 mr-2" /> Sync Super Admin Permissions
             </Button>
           </form>
 

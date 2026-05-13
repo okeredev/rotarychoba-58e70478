@@ -25,21 +25,36 @@ function AdminLogin() {
     const email = String(fd.get("email") || "").trim();
     const password = String(fd.get("password") || "");
 
-    if (mode === "signup" && email !== ADMIN_EMAIL) {
-      toast.error("Only the registered admin email can create an admin account.");
+    if (mode === "signup" && !email.includes("@")) {
+      toast.error("Please enter a valid email.");
       return;
     }
 
     setLoading(true);
     try {
       if (mode === "signup") {
-        const { error } = await supabase.auth.signUp({
+        const { data: up, error } = await supabase.auth.signUp({
           email,
           password,
-          options: { emailRedirectTo: `https://www.rotaryclubofchobauniport.org/admin` },
+          options: { emailRedirectTo: `${window.location.origin}/admin` },
         });
         if (error) throw error;
-        toast.success("Admin account created. You're signed in.");
+        if (up.user) {
+          // Create the pending role. 
+          // If it's the hardcoded super admin, it might already exist or should be approved.
+          // But since the user ran the SQL, it's already there.
+          // For new signups, we insert 'pending'.
+          const { error: roleErr } = await supabase.from("user_roles").insert({
+            user_id: up.user.id,
+            role: "admin",
+            status: email === ADMIN_EMAIL ? "approved" : "pending",
+          });
+          // We ignore duplicate errors if the user already has a role
+          if (roleErr && !roleErr.message.includes("duplicate")) {
+             console.error("Role creation error:", roleErr);
+          }
+        }
+        toast.success("Account created! Access is pending admin approval.");
       } else {
         const { error } = await supabase.auth.signInWithPassword({ email, password });
         if (error) throw error;

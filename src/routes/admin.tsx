@@ -1,7 +1,7 @@
 import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useMemo, useState } from "react";
-import { listAdmins, inviteAdmin, revokeAdmin, type AdminUser } from "@/lib/admin-users.functions";
+import { listAdmins, inviteAdmin, revokeAdmin, updateAdminStatus, updateAdminRole, type AdminUser } from "@/lib/admin-users.functions";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -59,15 +59,15 @@ function AdminDashboard() {
         navigate({ to: "/admin/login" });
         return;
       }
-      const { data: roles } = await supabase
+      const { data: roleData } = await supabase
         .from("user_roles")
-        .select("role")
+        .select("role, status")
         .eq("user_id", session.user.id)
-        .eq("role", "admin");
+        .maybeSingle();
 
       if (!active) return;
-      if (!roles || roles.length === 0) {
-        toast.error("This account does not have admin access.");
+      if (!roleData || roleData.status !== "approved") {
+        toast.error("Access pending or denied. Please contact a super admin.");
         await supabase.auth.signOut();
         navigate({ to: "/admin/login" });
         return;
@@ -1316,6 +1316,178 @@ function AwardsPanel() {
             </TableBody>
           </Table>
         </div>
+      </Card>
+    </div>
+  );
+}
+
+// ============================================================================
+// ADMIN USERS PANEL
+// ============================================================================
+function UsersPanel() {
+  const [admins, setAdmins] = useState<AdminUser[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [inviting, setInviting] = useState(false);
+  const [inviteEmail, setInviteEmail] = useState("");
+  const [myRole, setMyRole] = useState<string>("admin");
+
+  const listFn = useServerFn(listAdmins);
+  const inviteFn = useServerFn(inviteAdmin);
+  const revokeFn = useServerFn(revokeAdmin);
+  const statusFn = useServerFn(updateAdminStatus);
+  const roleFn = useServerFn(updateAdminRole);
+
+  useEffect(() => { 
+    void load(); 
+    // Get current user role
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (session) {
+        supabase.from("user_roles").select("role").eq("user_id", session.user.id).maybeSingle().then(({ data }) => {
+          if (data) setMyRole(data.role);
+        });
+      }
+    });
+  }, []);
+
+  async function load() {
+    setLoading(true);
+    try {
+      const res = await listFn();
+      setAdmins(res.admins);
+    } catch (err) {
+      toast.error("Failed to load admin users");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function handleInvite() {
+    if (!inviteEmail.trim()) return;
+    setInviting(true);
+    try {
+      await inviteFn({ data: { email: inviteEmail.trim(), redirectTo: ${window.location.origin}/admin } });
+      toast.success("Admin invited/approved");
+      setInviteEmail("");
+      void load();
+    } catch (err) {
+      toast.error("Failed to invite admin");
+    } finally {
+      setInviting(false);
+    }
+  }
+
+  async function updateStatus(userId: string, status: "approved" | "rejected") {
+    try {
+      await statusFn({ data: { user_id: userId, status } });
+      toast.success(User );
+      void load();
+    } catch (err) {
+      toast.error("Action failed");
+    }
+  }
+
+  async function updateRole(userId: string, role: "admin" | "super_admin") {
+    try {
+      await roleFn({ data: { user_id: userId, role } });
+      toast.success(Role updated to );
+      void load();
+    } catch (err) {
+      toast.error("Failed to update role");
+    }
+  }
+
+  async function handleRevoke(userId: string) {
+    if (!confirm("Revoke all admin access for this user?")) return;
+    try {
+      await revokeFn({ data: { user_id: userId } });
+      toast.success("Access revoked");
+      void load();
+    } catch (err) {
+      toast.error("Action failed");
+    }
+  }
+
+  const isSuper = myRole === "super_admin";
+
+  return (
+    <div className="max-w-4xl">
+      <div className="flex items-center justify-between mb-4">
+        <div>
+          <h2 className="font-display text-2xl font-bold text-primary">Admin Users</h2>
+          <p className="text-sm text-muted-foreground">Manage who can access this dashboard and their roles.</p>
+        </div>
+      </div>
+
+      {isSuper && (
+        <Card className="p-4 mb-6 flex gap-3">
+          <Input 
+            placeholder="Invite by email (auto-approves)" 
+            value={inviteEmail} 
+            onChange={(e) => setInviteEmail(e.target.value)} 
+          />
+          <Button onClick={handleInvite} disabled={inviting} className="bg-primary text-primary-foreground">
+            {inviting ? "Inviting..." : "Invite / Approve"}
+          </Button>
+        </Card>
+      )}
+
+      <Card className="overflow-hidden">
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>Admin User</TableHead>
+              <TableHead>Status</TableHead>
+              <TableHead>Role</TableHead>
+              {isSuper && <TableHead className="text-right">Actions</TableHead>}
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {loading ? (
+              <TableRow><TableCell colSpan={4} className="text-center py-12 text-muted-foreground">Loading users...</TableCell></TableRow>
+            ) : admins.length === 0 ? (
+              <TableRow><TableCell colSpan={4} className="text-center py-12 text-muted-foreground">No admin users found.</TableCell></TableRow>
+            ) : (
+              admins.map((u) => (
+                <TableRow key={u.user_id}>
+                  <TableCell>
+                    <div className="font-medium">{u.email}</div>
+                    <div className="text-xs text-muted-foreground">Joined {new Date(u.created_at || "").toLocaleDateString()}</div>
+                  </TableCell>
+                  <TableCell>
+                    <Badge variant={u.status === "approved" ? "default" : u.status === "pending" ? "secondary" : "destructive"}>
+                      {u.status.toUpperCase()}
+                    </Badge>
+                  </TableCell>
+                  <TableCell>
+                    {isSuper && !u.is_self ? (
+                      <Select value={u.role} onValueChange={(v) => updateRole(u.user_id, v as "admin" | "super_admin")}>
+                        <SelectTrigger className="h-8 w-32"><SelectValue /></SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="admin">Admin</SelectItem>
+                          <SelectItem value="super_admin">Super Admin</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    ) : (
+                      <span className="text-sm capitalize">{u.role}</span>
+                    )}
+                  </TableCell>
+                  {isSuper && (
+                    <TableCell className="text-right space-x-2">
+                      {!u.is_self && u.status === "pending" && (
+                        <Button size="sm" onClick={() => updateStatus(u.user_id, "approved")} className="bg-emerald-600 hover:bg-emerald-700 text-white">Approve</Button>
+                      )}
+                      {!u.is_self && (
+                        <Button size="sm" variant="ghost" className="text-destructive" onClick={() => handleRevoke(u.user_id)}>
+                          <Trash2 className="size-4" />
+                        </Button>
+                      )}
+                    </TableCell>
+                  )}
+                </TableRow>
+              ))
+            )}
+          </TableBody>
+        </Table>
       </Card>
     </div>
   );

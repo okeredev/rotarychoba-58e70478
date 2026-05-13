@@ -169,7 +169,7 @@ function RafflePage() {
             {done.payment_method === "pay_now" ? (
               <>
                 <BankBox bank={bank} copy={copy} copied={copied} />
-                <RaffleProofUpload saleId={done.id} />
+                <RaffleProofUpload saleId={done.id} buyerPhone={done.buyer_phone} />
               </>
             ) : (
               <div className="rounded-lg border border-dashed border-primary/40 bg-secondary/30 p-4 text-sm">

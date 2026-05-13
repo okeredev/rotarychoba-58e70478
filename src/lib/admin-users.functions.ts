@@ -4,18 +4,24 @@ import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 
 // Verify caller is admin or super_admin.
-async function assertAdmin(supabase: any, userId: string, requireSuper: boolean = false) {
-  const { data, error } = await supabase
+async function assertAdmin(supabase: any, userId: string, claims: any, requireSuper: boolean = false) {
+  const isMainAdmin = claims?.email === "cryptobountiesupdates@gmail.com";
+
+  const { data } = await supabase
     .from("user_roles")
     .select("role, status")
     .eq("user_id", userId)
     .maybeSingle();
 
-  if (error || !data || data.status !== "approved") {
+  const hasRole = data && data.status === "approved";
+  
+  if (!isMainAdmin && (!data || !hasRole)) {
     throw new Response("Forbidden: approved admin only", { status: 403 });
   }
 
-  if (requireSuper && data.role !== "super_admin") {
+  const role = isMainAdmin ? "super_admin" : data?.role;
+
+  if (requireSuper && role !== "super_admin") {
     throw new Response("Forbidden: super_admin only", { status: 403 });
   }
 }
@@ -32,7 +38,7 @@ export type AdminUser = {
 export const listAdmins = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }): Promise<{ admins: AdminUser[] }> => {
-    await assertAdmin(context.supabase, context.userId);
+    await assertAdmin(context.supabase, context.userId, context.claims);
 
     const { data: roles, error } = await supabaseAdmin
       .from("user_roles")
@@ -69,7 +75,7 @@ export const inviteAdmin = createServerFn({ method: "POST" })
   )
   .handler(async ({ data, context }) => {
     // Only super_admin can invite directly (auto-approved)
-    await assertAdmin(context.supabase, context.userId, true);
+    await assertAdmin(context.supabase, context.userId, context.claims, true);
 
     let userId: string | null = null;
     const { data: list } = await supabaseAdmin.auth.admin.listUsers({ page: 1, perPage: 200 });
@@ -106,7 +112,7 @@ export const updateAdminStatus = createServerFn({ method: "POST" })
     z.object({ user_id: z.string().uuid(), status: z.enum(["approved", "rejected"]) }).parse(input),
   )
   .handler(async ({ data, context }) => {
-    await assertAdmin(context.supabase, context.userId, true);
+    await assertAdmin(context.supabase, context.userId, context.claims, true);
     
     const { error } = await supabaseAdmin
       .from("user_roles")
@@ -123,7 +129,7 @@ export const updateAdminRole = createServerFn({ method: "POST" })
     z.object({ user_id: z.string().uuid(), role: z.enum(["admin", "super_admin"]) }).parse(input),
   )
   .handler(async ({ data, context }) => {
-    await assertAdmin(context.supabase, context.userId, true);
+    await assertAdmin(context.supabase, context.userId, context.claims, true);
     
     const { error } = await supabaseAdmin
       .from("user_roles")
@@ -140,7 +146,7 @@ export const revokeAdmin = createServerFn({ method: "POST" })
     z.object({ user_id: z.string().uuid() }).parse(input),
   )
   .handler(async ({ data, context }) => {
-    await assertAdmin(context.supabase, context.userId, true);
+    await assertAdmin(context.supabase, context.userId, context.claims, true);
     if (data.user_id === context.userId) {
       throw new Response("You cannot revoke your own role", { status: 400 });
     }

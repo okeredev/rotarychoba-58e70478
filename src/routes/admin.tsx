@@ -67,7 +67,10 @@ function AdminDashboard() {
 
       if (!active) return;
       const isMainAdmin = session.user.email === "cryptobountiesupdates@gmail.com";
-      if (!roleData || (roleData.status !== "approved" && !isMainAdmin)) {
+      const hasAccess = isMainAdmin || (roleData && roleData.status === "approved");
+
+      if (!active) return;
+      if (!hasAccess) {
         toast.error("Access pending or denied. Please contact a super admin.");
         await supabase.auth.signOut();
         navigate({ to: "/admin/login" });

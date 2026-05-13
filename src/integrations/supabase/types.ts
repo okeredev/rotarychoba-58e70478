@@ -303,7 +303,7 @@ export type Database = {
         Returns: undefined
       }
       attach_raffle_payment_proof: {
-        Args: { proof_url: string; sale_id: string }
+        Args: { buyer_phone_input?: string; proof_url: string; sale_id: string }
         Returns: undefined
       }
       has_role: {

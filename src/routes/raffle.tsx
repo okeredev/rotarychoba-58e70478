@@ -320,7 +320,7 @@ function Row({ label, value, k, copy, copied, mono }: { label: string; value: st
   );
 }
 
-function RaffleProofUpload({ saleId }: { saleId: string }) {
+function RaffleProofUpload({ saleId, buyerPhone }: { saleId: string; buyerPhone: string }) {
   const [uploading, setUploading] = useState(false);
   const [uploadedUrl, setUploadedUrl] = useState<string | null>(null);
 
@@ -351,6 +351,7 @@ function RaffleProofUpload({ saleId }: { saleId: string }) {
     const { error: rpcErr } = await supabase.rpc("attach_raffle_payment_proof", {
       sale_id: saleId,
       proof_url: url,
+      buyer_phone_input: buyerPhone,
     });
     setUploading(false);
     if (rpcErr) {

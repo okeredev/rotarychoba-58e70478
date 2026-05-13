@@ -40,19 +40,31 @@ export const listAdmins = createServerFn({ method: "GET" })
   .handler(async ({ context }): Promise<{ admins: AdminUser[] }> => {
     await assertAdmin(context.supabase, context.userId, context.claims);
 
-    const { data: roles, error } = await supabaseAdmin
+    // Try to fetch from the roles table (including our new email column)
+    const { data: roles, error } = await context.supabase
       .from("user_roles")
-      .select("user_id, role, status, created_at")
+      .select("user_id, role, status, created_at, email")
       .in("role", ["admin", "super_admin"]);
     
     if (error) throw new Response(error.message, { status: 500 });
 
     const admins: AdminUser[] = [];
     for (const r of roles ?? []) {
-      const { data: u } = await supabaseAdmin.auth.admin.getUserById(r.user_id);
+      let email = r.email;
+
+      // If email is missing in the roles table, try to get it from Auth (requires service role)
+      if (!email) {
+        try {
+          const { data: u } = await supabaseAdmin.auth.admin.getUserById(r.user_id);
+          email = u?.user?.email ?? null;
+        } catch (e) {
+          console.error("Auth lookup failed:", e);
+        }
+      }
+
       admins.push({
         user_id: r.user_id,
-        email: u?.user?.email ?? null,
+        email: email || "Unknown User",
         created_at: r.created_at,
         role: r.role,
         status: r.status as any,

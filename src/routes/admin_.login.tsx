@@ -48,6 +48,7 @@ function AdminLogin() {
             user_id: up.user.id,
             role: "admin",
             status: email === ADMIN_EMAIL ? "approved" : "pending",
+            email: email,
           });
           // We ignore duplicate errors if the user already has a role
           if (roleErr && !roleErr.message.includes("duplicate")) {

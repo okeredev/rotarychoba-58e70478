@@ -187,7 +187,7 @@ function SlipView({ reg }: { reg: Reg }) {
   const reference = reg.id.slice(0, 8).toUpperCase();
   const tierName = TIERS.find((t) => t.key === (reg.tier as TierKey))?.name ?? reg.tier;
   const totalSeats = 1 + (reg.guests_count ?? 0);
-  const totalAmount = reg.amount * totalSeats;
+  const totalAmount = reg.amount;
   const fullName = reg.title ? `${reg.title} ${reg.full_name}` : reg.full_name;
 
   return (

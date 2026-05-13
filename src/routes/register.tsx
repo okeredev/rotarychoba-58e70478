@@ -55,8 +55,9 @@ type SuccessData = {
 
 function Register() {
   const { tier } = Route.useSearch();
+  const selectedTier = tier || "standard";
   const navigate = useNavigate();
-  const [selectedTier, setSelectedTier] = useState<TierKey>(tier);
+  const [guestsCount, setGuestsCount] = useState(0);
   const [title, setTitle] = useState<string>("");
   const [paymentChoice, setPaymentChoice] = useState<"pay_now" | "pay_at_venue">("pay_at_venue");
   const [bank, setBank] = useState<BankInfo>(DEFAULT_BANK);
@@ -181,7 +182,6 @@ function Register() {
               key={t.key}
               type="button"
               onClick={() => {
-                setSelectedTier(t.key);
                 navigate({ to: "/register", search: { tier: t.key } });
               }}
               className={`text-left rounded-lg border-2 p-4 transition ${
@@ -240,7 +240,7 @@ function Register() {
             <div className="grid gap-5 md:grid-cols-2">
               <div>
                 <Label htmlFor="guests_count">Number of additional guests</Label>
-                <Input id="guests_count" name="guests_count" type="number" min={0} max={20} defaultValue={0} className="mt-2" />
+                <Input id="guests_count" name="guests_count" type="number" min={0} max={20} value={guestsCount} onChange={(e) => setGuestsCount(parseInt(e.target.value) || 0)} className="mt-2" />
                 <p className="mt-1 text-xs text-muted-foreground">Each guest pays the same tier fee at the venue.</p>
               </div>
             </div>
@@ -267,7 +267,7 @@ function Register() {
                   selected={paymentChoice === "pay_at_venue"}
                   onClick={() => setPaymentChoice("pay_at_venue")}
                   title="Pay at the venue"
-                  description={`Bring ${formatNGN(tierData.amount)} on the day.`}
+                  description={`Bring ${formatNGN(tierData.amount * (1 + guestsCount))} on the day.`}
                 />
               </div>
             )}
@@ -289,7 +289,7 @@ function Register() {
             <div className="flex flex-col sm:flex-row sm:items-center gap-4 pt-2 border-t border-border">
               <div className="flex-1">
                 <p className="text-sm text-muted-foreground">You're paying</p>
-                <p className="font-display text-2xl font-bold text-primary">{formatNGN(tierData.amount)}</p>
+                <p className="font-display text-2xl font-bold text-primary">{formatNGN(tierData.amount * (1 + guestsCount))}</p>
                 <p className="text-xs text-muted-foreground">
                   {effectiveChoice === "pay_now" ? "Bank details shown after submission" : "Payable at the venue"}
                 </p>

@@ -78,11 +78,11 @@ function Landing() {
             <Link to="/raffle" className="text-foreground/80 hover:text-primary transition">Raffle</Link>
             <Link to="/receipt" className="text-foreground/80 hover:text-primary transition">My slip</Link>
             <Button asChild size="sm" className="bg-primary text-primary-foreground hover:bg-primary/90">
-              <Link to="/register">Register</Link>
+              <Link to="/register" search={{ tier: "standard" }}>Register</Link>
             </Button>
           </nav>
           <Button asChild size="sm" className="md:hidden bg-primary text-primary-foreground">
-            <Link to="/register">Register</Link>
+            <Link to="/register" search={{ tier: "standard" }}>Register</Link>
           </Button>
         </div>
       </header>
@@ -134,7 +134,7 @@ function Landing() {
 
             <div className="mt-10 flex flex-wrap justify-center gap-3">
               <Button asChild size="lg" className="bg-gold text-gold-foreground hover:bg-gold/90 text-base px-8 h-12 font-semibold">
-                <Link to="/register">
+                <Link to="/register" search={{ tier: "standard" }}>
                   Reserve your seat <ArrowRight className="ml-1 size-4" />
                 </Link>
               </Button>
@@ -184,7 +184,7 @@ function Landing() {
                   </p>
                   <div className="mt-7 flex flex-wrap gap-3">
                     <Button asChild className="bg-primary text-primary-foreground hover:bg-primary/90">
-                      <Link to="/register">Attend the installation</Link>
+                      <Link to="/register" search={{ tier: "standard" }}>Attend the installation</Link>
                     </Button>
                     <Button asChild variant="outline" className="border-gold text-primary hover:bg-gold/10">
                       <Link to="/sponsor">Become a sponsor</Link>
@@ -353,7 +353,7 @@ function Landing() {
           </p>
           <div className="mt-4 flex flex-wrap items-center justify-center gap-x-5 gap-y-2 text-xs">
             <Link to="/" className="text-sidebar-foreground/70 hover:text-gold">Home</Link>
-            <Link to="/register" className="text-sidebar-foreground/70 hover:text-gold">Register</Link>
+            <Link to="/register" search={{ tier: "standard" }} className="text-sidebar-foreground/70 hover:text-gold">Register</Link>
             <Link to="/sponsor" className="text-sidebar-foreground/70 hover:text-gold">Sponsor</Link>
             <Link to="/raffle" className="text-sidebar-foreground/70 hover:text-gold">Raffle</Link>
             <Link to="/receipt" className="text-sidebar-foreground/70 hover:text-gold">My slip</Link>

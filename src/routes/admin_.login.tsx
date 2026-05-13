@@ -78,7 +78,7 @@ function AdminLogin() {
                 name="email"
                 type="email"
                 required
-                defaultValue={ADMIN_EMAIL}
+                defaultValue=""
                 className="mt-2"
               />
             </div>

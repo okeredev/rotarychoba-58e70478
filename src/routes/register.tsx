@@ -118,7 +118,7 @@ function Register() {
       guests_count: d.guests_count,
       notes: d.notes || null,
       tier: selectedTier,
-      amount: tierData.amount,
+      amount: tierData.amount * (1 + d.guests_count),
       payment_method: effectiveChoice,
       payment_status: "pending" as const,
     };
@@ -147,7 +147,7 @@ function Register() {
       full_name: d.full_name,
       email: d.email || "",
       phone: d.phone,
-      amount: tierData.amount,
+      amount: tierData.amount * (1 + d.guests_count),
       guests_count: d.guests_count,
       payment_method: effectiveChoice,
     };
@@ -326,7 +326,8 @@ function SuccessView({ data, bank, onReset }: { data: SuccessData; bank: BankInf
   const reference = data.id.slice(0, 8).toUpperCase();
   const tierName = TIERS.find((t) => t.key === data.tier)?.name ?? data.tier;
   const totalSeats = 1 + data.guests_count;
-  const totalAmount = data.amount * totalSeats;
+  const totalAmount = data.amount;
+  const unitAmount = data.amount / totalSeats;
   const isPayNow = data.payment_method === "pay_now";
 
   return (
@@ -385,7 +386,7 @@ function SuccessView({ data, bank, onReset }: { data: SuccessData; bank: BankInf
                 <p className="font-display text-3xl font-bold text-primary">{formatNGN(totalAmount)}</p>
               </div>
               <div className="text-right text-xs text-muted-foreground">
-                {formatNGN(data.amount)} × {totalSeats}
+                {formatNGN(unitAmount)} × {totalSeats}
               </div>
             </div>
 

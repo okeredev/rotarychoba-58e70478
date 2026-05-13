@@ -50,7 +50,7 @@ function RafflePage() {
   const [qty, setQty] = useState(1);
   const [paymentChoice, setPaymentChoice] = useState<PaymentChoice>("pay_now");
   const [submitting, setSubmitting] = useState(false);
-  const [done, setDone] = useState<{ id: string; amount: number; qty: number; payment_method: PaymentChoice } | null>(null);
+  const [done, setDone] = useState<{ id: string; amount: number; qty: number; payment_method: PaymentChoice; buyer_phone: string } | null>(null);
   const [copied, setCopied] = useState<string | null>(null);
 
   useEffect(() => {

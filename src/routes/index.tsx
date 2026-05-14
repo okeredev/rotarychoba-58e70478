@@ -3,7 +3,8 @@ import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { TIERS, formatNGN, EVENT } from "@/lib/tiers";
-import { Calendar, MapPin, Sparkles, Check, ArrowRight, User } from "lucide-react";
+import { Calendar, MapPin, Sparkles, Check, ArrowRight, User, Menu } from "lucide-react";
+import { Sheet, SheetContent, SheetTrigger, SheetHeader, SheetTitle, SheetClose } from "@/components/ui/sheet";
 import { supabase } from "@/integrations/supabase/client";
 import rotaryWheel from "@/assets/rotary-wheel.png";
 import ceremonyHero from "@/assets/ceremony-hero.jpg";
@@ -61,14 +62,14 @@ function Landing() {
     <div className="min-h-screen bg-background">
       {/* Header */}
       <header className="border-b border-border/60 bg-background/85 backdrop-blur sticky top-0 z-40">
-        <div className="container mx-auto flex items-center justify-between px-6 py-3">
-          <div className="flex items-center gap-3">
-            <img src={rotaryWheel} alt="Rotary International" className="size-11" width={44} height={44} />
-            <div className="leading-tight">
-              <p className="font-display text-base md:text-lg font-bold text-primary">Rotary Club of Choba-Uniport</p>
-              <p className="text-[11px] uppercase tracking-widest text-muted-foreground">District 9141 · Nigeria</p>
+        <div className="container mx-auto flex items-center justify-between gap-3 px-4 sm:px-6 py-3">
+          <Link to="/" className="flex items-center gap-2 sm:gap-3 min-w-0">
+            <img src={rotaryWheel} alt="Rotary International" className="size-9 sm:size-11 shrink-0" width={44} height={44} />
+            <div className="leading-tight min-w-0">
+              <p className="font-display text-sm sm:text-base md:text-lg font-bold text-primary truncate">Rotary Club of Choba-Uniport</p>
+              <p className="text-[10px] sm:text-[11px] uppercase tracking-widest text-muted-foreground truncate">District 9141 · Nigeria</p>
             </div>
-          </div>
+          </Link>
           <nav className="hidden md:flex items-center gap-6 text-sm font-medium">
             <a href="#tiers" className="text-foreground/80 hover:text-primary transition">Tiers</a>
             <a href="#president" className="text-foreground/80 hover:text-primary transition">President</a>
@@ -81,11 +82,39 @@ function Landing() {
               <Link to="/register" search={{ tier: "standard" }}>Register</Link>
             </Button>
           </nav>
-          <Button asChild size="sm" className="md:hidden bg-primary text-primary-foreground">
-            <Link to="/register" search={{ tier: "standard" }}>Register</Link>
-          </Button>
+          <Sheet>
+            <SheetTrigger asChild>
+              <button
+                type="button"
+                aria-label="Open menu"
+                className="md:hidden inline-flex items-center justify-center rounded-md border border-border bg-background p-2 text-foreground hover:bg-accent"
+              >
+                <Menu className="size-5" />
+              </button>
+            </SheetTrigger>
+            <SheetContent side="right" className="w-[85vw] max-w-sm">
+              <SheetHeader>
+                <SheetTitle>Menu</SheetTitle>
+              </SheetHeader>
+              <nav className="mt-6 flex flex-col gap-1 text-base font-medium">
+                <SheetClose asChild><a href="#tiers" className="rounded-md px-3 py-2 hover:bg-accent">Tiers</a></SheetClose>
+                <SheetClose asChild><a href="#president" className="rounded-md px-3 py-2 hover:bg-accent">President</a></SheetClose>
+                <SheetClose asChild><a href="#leadership" className="rounded-md px-3 py-2 hover:bg-accent">Leadership</a></SheetClose>
+                <SheetClose asChild><a href="#awards" className="rounded-md px-3 py-2 hover:bg-accent">Awards</a></SheetClose>
+                <SheetClose asChild><Link to="/sponsor" className="rounded-md px-3 py-2 hover:bg-accent">Sponsor</Link></SheetClose>
+                <SheetClose asChild><Link to="/raffle" className="rounded-md px-3 py-2 hover:bg-accent">Raffle</Link></SheetClose>
+                <SheetClose asChild><Link to="/receipt" className="rounded-md px-3 py-2 hover:bg-accent">My slip</Link></SheetClose>
+                <SheetClose asChild>
+                  <Button asChild className="mt-3 bg-primary text-primary-foreground hover:bg-primary/90">
+                    <Link to="/register" search={{ tier: "standard" }}>Register</Link>
+                  </Button>
+                </SheetClose>
+              </nav>
+            </SheetContent>
+          </Sheet>
         </div>
       </header>
+
 
       {/* Hero */}
       <section className="relative overflow-hidden">

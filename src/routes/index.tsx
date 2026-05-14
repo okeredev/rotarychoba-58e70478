@@ -61,7 +61,7 @@ function Landing() {
   return (
     <div className="min-h-screen bg-background">
       {/* Header */}
-      <header className="border-b border-border/60 bg-background/85 backdrop-blur sticky top-0 z-40">
+      <header className="sticky top-0 z-50 border-b border-border/60 bg-background/95 supports-[backdrop-filter]:bg-background/80 backdrop-blur">
         <div className="container mx-auto flex items-center justify-between gap-3 px-4 sm:px-6 py-3">
           <Link to="/" className="flex items-center gap-2 sm:gap-3 min-w-0">
             <img src={rotaryWheel} alt="Rotary International" className="size-9 sm:size-11 shrink-0" width={44} height={44} />

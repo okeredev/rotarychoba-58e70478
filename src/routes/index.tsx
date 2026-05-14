@@ -61,7 +61,7 @@ function Landing() {
   return (
     <div className="min-h-screen bg-background">
       {/* Header */}
-      <header className="border-b border-border/60 bg-background/85 backdrop-blur sticky top-0 z-40">
+      <header className="sticky top-0 z-50 border-b border-border/60 bg-background/95 supports-[backdrop-filter]:bg-background/80 backdrop-blur">
         <div className="container mx-auto flex items-center justify-between gap-3 px-4 sm:px-6 py-3">
           <Link to="/" className="flex items-center gap-2 sm:gap-3 min-w-0">
             <img src={rotaryWheel} alt="Rotary International" className="size-9 sm:size-11 shrink-0" width={44} height={44} />
@@ -177,7 +177,7 @@ function Landing() {
       </section>
 
       {/* Incoming President */}
-      <section id="president" className="border-b border-border bg-secondary/30">
+      <section id="president" className="scroll-mt-20 border-b border-border bg-secondary/30">
         <div className="container mx-auto px-6 py-20">
           {(() => {
             const president = incoming[0];
@@ -227,7 +227,7 @@ function Landing() {
       </section>
 
       {/* Tiers */}
-      <section id="tiers" className="container mx-auto px-6 py-20">
+      <section id="tiers" className="scroll-mt-20 container mx-auto px-6 py-20">
         <div className="text-center max-w-2xl mx-auto mb-12">
           <p className="text-xs uppercase tracking-[0.25em] text-gold font-semibold">Participation</p>
           <h2 className="font-display text-4xl font-bold text-primary mt-3">Choose your tier</h2>
@@ -282,7 +282,7 @@ function Landing() {
       </section>
 
       {/* Leadership */}
-      <section id="leadership" className="bg-secondary/40 border-y border-border">
+      <section id="leadership" className="scroll-mt-20 bg-secondary/40 border-y border-border">
         <div className="container mx-auto px-6 py-20">
           <div className="text-center max-w-2xl mx-auto mb-12">
             <p className="text-xs uppercase tracking-[0.25em] text-gold font-semibold">Leadership</p>
@@ -320,7 +320,7 @@ function Landing() {
       </section>
 
       {/* Awards & Recognition */}
-      <section id="awards" className="container mx-auto px-6 py-20">
+      <section id="awards" className="scroll-mt-20 container mx-auto px-6 py-20">
         <div className="text-center max-w-2xl mx-auto mb-12">
           <p className="text-xs uppercase tracking-[0.25em] text-gold font-semibold">Recognition</p>
           <h2 className="font-display text-4xl font-bold text-primary mt-3">Awards &amp; Honourees</h2>

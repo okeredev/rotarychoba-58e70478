@@ -177,7 +177,7 @@ function Landing() {
       </section>
 
       {/* Incoming President */}
-      <section id="president" className="border-b border-border bg-secondary/30">
+      <section id="president" className="scroll-mt-20 border-b border-border bg-secondary/30">
         <div className="container mx-auto px-6 py-20">
           {(() => {
             const president = incoming[0];
@@ -227,7 +227,7 @@ function Landing() {
       </section>
 
       {/* Tiers */}
-      <section id="tiers" className="container mx-auto px-6 py-20">
+      <section id="tiers" className="scroll-mt-20 container mx-auto px-6 py-20">
         <div className="text-center max-w-2xl mx-auto mb-12">
           <p className="text-xs uppercase tracking-[0.25em] text-gold font-semibold">Participation</p>
           <h2 className="font-display text-4xl font-bold text-primary mt-3">Choose your tier</h2>
@@ -282,7 +282,7 @@ function Landing() {
       </section>
 
       {/* Leadership */}
-      <section id="leadership" className="bg-secondary/40 border-y border-border">
+      <section id="leadership" className="scroll-mt-20 bg-secondary/40 border-y border-border">
         <div className="container mx-auto px-6 py-20">
           <div className="text-center max-w-2xl mx-auto mb-12">
             <p className="text-xs uppercase tracking-[0.25em] text-gold font-semibold">Leadership</p>
@@ -320,7 +320,7 @@ function Landing() {
       </section>
 
       {/* Awards & Recognition */}
-      <section id="awards" className="container mx-auto px-6 py-20">
+      <section id="awards" className="scroll-mt-20 container mx-auto px-6 py-20">
         <div className="text-center max-w-2xl mx-auto mb-12">
           <p className="text-xs uppercase tracking-[0.25em] text-gold font-semibold">Recognition</p>
           <h2 className="font-display text-4xl font-bold text-primary mt-3">Awards &amp; Honourees</h2>

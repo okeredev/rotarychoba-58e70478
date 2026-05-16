@@ -26,6 +26,16 @@ export const Route = createFileRoute("/register")({
     tier: tierSchema.parse(s.tier),
   }),
   component: Register,
+  head: () => ({
+    meta: [
+      { title: "Register — 16th Installation Ceremony · Rotary Choba-Uniport" },
+      { name: "description", content: "Reserve your seat at the 16th Installation Ceremony. Standard, Premium and VIP tiers — pay at the venue or by bank transfer." },
+      { property: "og:title", content: "Register — 16th Installation Ceremony" },
+      { property: "og:description", content: "Reserve your seat at the 16th Installation Ceremony of the Rotary Club of Choba-Uniport." },
+      { property: "og:url", content: "https://16th.rotaryclubofchobauniport.org/register" },
+    ],
+    links: [{ rel: "canonical", href: "https://16th.rotaryclubofchobauniport.org/register" }],
+  }),
 });
 
 const formSchema = z.object({
@@ -494,9 +504,9 @@ function Field({
 
 function SectionHeading({ children }: { children: React.ReactNode }) {
   return (
-    <p className="text-xs uppercase tracking-[0.2em] text-gold font-semibold border-b border-border pb-2">
+    <h2 className="text-xs uppercase tracking-[0.2em] text-gold font-semibold border-b border-border pb-2">
       {children}
-    </p>
+    </h2>
   );
 }
 

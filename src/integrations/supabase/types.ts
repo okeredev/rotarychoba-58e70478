@@ -101,6 +101,42 @@ export type Database = {
         }
         Relationships: []
       }
+      goodwill_messages: {
+        Row: {
+          created_at: string
+          id: string
+          message: string
+          photo_url: string | null
+          sender_name: string
+          sender_role: string | null
+          sort_order: number
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          message: string
+          photo_url?: string | null
+          sender_name: string
+          sender_role?: string | null
+          sort_order?: number
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          message?: string
+          photo_url?: string | null
+          sender_name?: string
+          sender_role?: string | null
+          sort_order?: number
+          status?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       raffle_sales: {
         Row: {
           amount: number

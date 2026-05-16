@@ -22,7 +22,7 @@ import { Badge } from "@/components/ui/badge";
 import { TIERS, formatNGN } from "@/lib/tiers";
 import { fetchBankInfo, saveBankInfo, DEFAULT_BANK, type BankInfo } from "@/lib/settings";
 import { toast } from "sonner";
-import { LogOut, Search, Users, Wallet, Crown, RefreshCw, Plus, Trash2, Pencil, Upload, Download, LayoutDashboard, Handshake, Ticket, Award as AwardIcon, Settings as SettingsIcon, ExternalLink, Eye, Printer, Info } from "lucide-react";
+import { LogOut, Search, Users, Wallet, Crown, RefreshCw, Plus, Trash2, Pencil, Upload, Download, LayoutDashboard, Handshake, Ticket, Award as AwardIcon, Settings as SettingsIcon, ExternalLink, Eye, Printer, Info, Heart, Check, X } from "lucide-react";
 import type { Database } from "@/integrations/supabase/types";
 import {
   Sidebar, SidebarContent, SidebarGroup, SidebarGroupContent, SidebarGroupLabel,
@@ -102,6 +102,7 @@ function AdminDashboard() {
     { key: "raffle", label: "Raffle", icon: Ticket },
     { key: "awards", label: "Awards", icon: AwardIcon },
     { key: "members", label: "Leadership & Board", icon: Crown },
+    { key: "goodwill", label: "Goodwill messages", icon: Heart },
     { key: "users", label: "Admin users", icon: Users },
     { key: "settings", label: "Settings", icon: SettingsIcon },
   ];
@@ -180,6 +181,7 @@ function AdminDashboard() {
             {section === "raffle" && <RafflePanel />}
             {section === "awards" && <AwardsPanel />}
             {section === "members" && <MembersPanel />}
+            {section === "goodwill" && <GoodwillPanel />}
             {section === "users" && <UsersPanel />}
             {section === "settings" && <SettingsPanel />}
           </main>

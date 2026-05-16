@@ -154,7 +154,7 @@ function RafflePage() {
                 <div className="text-xs uppercase tracking-wider text-foreground/60">Reference</div>
                 <div className="font-mono text-lg font-semibold">{refShort}</div>
               </div>
-              <Button size="sm" variant="outline" onClick={() => copy(refShort, "ref")}>
+              <Button size="sm" variant="outline" onClick={() => copy(refShort, "ref")} aria-label="Copy reference number">
                 {copied === "ref" ? <Check className="size-4" /> : <Copy className="size-4" />}
                 <span className="ml-2">{copied === "ref" ? "Copied" : "Copy"}</span>
               </Button>

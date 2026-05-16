@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { TIERS, formatNGN, EVENT } from "@/lib/tiers";
 import { Calendar, MapPin, Sparkles, Check, ArrowRight, User, Menu } from "lucide-react";
+import { GoodwillSection } from "@/components/goodwill-section";
 import { Sheet, SheetContent, SheetTrigger, SheetHeader, SheetTitle, SheetClose } from "@/components/ui/sheet";
 import { supabase } from "@/integrations/supabase/client";
 import rotaryWheel from "@/assets/rotary-wheel.png";
@@ -36,6 +37,52 @@ const AWARD_RULES = [
 
 export const Route = createFileRoute("/")({
   component: Landing,
+  head: () => ({
+    meta: [
+      { title: "Rotary Club of Choba-Uniport — 16th Installation Ceremony" },
+      { name: "description", content: "Join the 16th Installation Ceremony of the Rotary Club of Choba-Uniport on Friday, 3 July 2026 at Helena Haven Hotel, Choba." },
+      { property: "og:title", content: "Rotary Club of Choba-Uniport — 16th Installation Ceremony" },
+      { property: "og:description", content: "Join the 16th Installation Ceremony of the Rotary Club of Choba-Uniport on Friday, 3 July 2026." },
+      { property: "og:url", content: "https://16th.rotaryclubofchobauniport.org/" },
+    ],
+    links: [
+      { rel: "canonical", href: "https://16th.rotaryclubofchobauniport.org/" },
+    ],
+    scripts: [
+      {
+        type: "application/ld+json",
+        children: JSON.stringify({
+          "@context": "https://schema.org",
+          "@type": "Event",
+          name: "16th Installation Ceremony — Rotary Club of Choba-Uniport",
+          startDate: "2026-07-03T15:00:00+01:00",
+          eventStatus: "https://schema.org/EventScheduled",
+          eventAttendanceMode: "https://schema.org/OfflineEventAttendanceMode",
+          location: {
+            "@type": "Place",
+            name: "Helena Haven Hotel",
+            address: "East-West Road, Choba, Rivers State, Nigeria",
+          },
+          organizer: {
+            "@type": "Organization",
+            name: "Rotary Club of Choba-Uniport",
+            url: "https://16th.rotaryclubofchobauniport.org/",
+          },
+          url: "https://16th.rotaryclubofchobauniport.org/",
+        }),
+      },
+      {
+        type: "application/ld+json",
+        children: JSON.stringify({
+          "@context": "https://schema.org",
+          "@type": "Organization",
+          name: "Rotary Club of Choba-Uniport",
+          url: "https://16th.rotaryclubofchobauniport.org/",
+          email: "rotarychoba.uniport@gmail.com",
+        }),
+      },
+    ],
+  }),
 });
 
 function Landing() {
@@ -75,6 +122,7 @@ function Landing() {
             <a href="#president" className="text-foreground/80 hover:text-primary transition">President</a>
             <a href="#leadership" className="text-foreground/80 hover:text-primary transition">Leadership</a>
             <a href="#awards" className="text-foreground/80 hover:text-primary transition">Awards</a>
+            <a href="#goodwill" className="text-foreground/80 hover:text-primary transition">Goodwill</a>
             <Link to="/sponsor" className="text-foreground/80 hover:text-primary transition">Sponsor</Link>
             <Link to="/raffle" className="text-foreground/80 hover:text-primary transition">Raffle</Link>
             <Link to="/receipt" className="text-foreground/80 hover:text-primary transition">My slip</Link>
@@ -101,6 +149,7 @@ function Landing() {
                 <SheetClose asChild><a href="#president" className="rounded-md px-3 py-2 hover:bg-accent">President</a></SheetClose>
                 <SheetClose asChild><a href="#leadership" className="rounded-md px-3 py-2 hover:bg-accent">Leadership</a></SheetClose>
                 <SheetClose asChild><a href="#awards" className="rounded-md px-3 py-2 hover:bg-accent">Awards</a></SheetClose>
+                <SheetClose asChild><a href="#goodwill" className="rounded-md px-3 py-2 hover:bg-accent">Goodwill</a></SheetClose>
                 <SheetClose asChild><Link to="/sponsor" className="rounded-md px-3 py-2 hover:bg-accent">Sponsor</Link></SheetClose>
                 <SheetClose asChild><Link to="/raffle" className="rounded-md px-3 py-2 hover:bg-accent">Raffle</Link></SheetClose>
                 <SheetClose asChild><Link to="/receipt" className="rounded-md px-3 py-2 hover:bg-accent">My slip</Link></SheetClose>
@@ -365,6 +414,8 @@ function Landing() {
           </div>
         )}
       </section>
+
+      <GoodwillSection />
 
       {/* Footer */}
       <footer className="border-t border-border bg-sidebar text-sidebar-foreground">

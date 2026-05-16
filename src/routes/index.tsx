@@ -37,6 +37,52 @@ const AWARD_RULES = [
 
 export const Route = createFileRoute("/")({
   component: Landing,
+  head: () => ({
+    meta: [
+      { title: "Rotary Club of Choba-Uniport — 16th Installation Ceremony" },
+      { name: "description", content: "Join the 16th Installation Ceremony of the Rotary Club of Choba-Uniport on Friday, 3 July 2026 at Helena Haven Hotel, Choba." },
+      { property: "og:title", content: "Rotary Club of Choba-Uniport — 16th Installation Ceremony" },
+      { property: "og:description", content: "Join the 16th Installation Ceremony of the Rotary Club of Choba-Uniport on Friday, 3 July 2026." },
+      { property: "og:url", content: "https://16th.rotaryclubofchobauniport.org/" },
+    ],
+    links: [
+      { rel: "canonical", href: "https://16th.rotaryclubofchobauniport.org/" },
+    ],
+    scripts: [
+      {
+        type: "application/ld+json",
+        children: JSON.stringify({
+          "@context": "https://schema.org",
+          "@type": "Event",
+          name: "16th Installation Ceremony — Rotary Club of Choba-Uniport",
+          startDate: "2026-07-03T15:00:00+01:00",
+          eventStatus: "https://schema.org/EventScheduled",
+          eventAttendanceMode: "https://schema.org/OfflineEventAttendanceMode",
+          location: {
+            "@type": "Place",
+            name: "Helena Haven Hotel",
+            address: "East-West Road, Choba, Rivers State, Nigeria",
+          },
+          organizer: {
+            "@type": "Organization",
+            name: "Rotary Club of Choba-Uniport",
+            url: "https://16th.rotaryclubofchobauniport.org/",
+          },
+          url: "https://16th.rotaryclubofchobauniport.org/",
+        }),
+      },
+      {
+        type: "application/ld+json",
+        children: JSON.stringify({
+          "@context": "https://schema.org",
+          "@type": "Organization",
+          name: "Rotary Club of Choba-Uniport",
+          url: "https://16th.rotaryclubofchobauniport.org/",
+          email: "rotarychoba.uniport@gmail.com",
+        }),
+      },
+    ],
+  }),
 });
 
 function Landing() {

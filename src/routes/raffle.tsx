@@ -322,7 +322,7 @@ function Row({ label, value, k, copy, copied, mono }: { label: string; value: st
 
 function RaffleProofUpload({ saleId, buyerPhone }: { saleId: string; buyerPhone: string }) {
   const [uploading, setUploading] = useState(false);
-  const [uploadedUrl, setUploadedUrl] = useState<string | null>(null);
+  const [done, setDone] = useState(false);
 
   async function handleFile(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
@@ -346,11 +346,9 @@ function RaffleProofUpload({ saleId, buyerPhone }: { saleId: string; buyerPhone:
       toast.error(upErr.message);
       return;
     }
-    const { data: pub } = supabase.storage.from("payment-proofs").getPublicUrl(path);
-    const url = pub.publicUrl;
     const { error: rpcErr } = await supabase.rpc("attach_raffle_payment_proof", {
       sale_id: saleId,
-      proof_url: url,
+      proof_url: path,
       buyer_phone_input: buyerPhone,
     });
     setUploading(false);
@@ -358,11 +356,11 @@ function RaffleProofUpload({ saleId, buyerPhone }: { saleId: string; buyerPhone:
       toast.error(rpcErr.message);
       return;
     }
-    setUploadedUrl(url);
+    setDone(true);
     toast.success("Payment proof uploaded");
   }
 
-  if (uploadedUrl) {
+  if (done) {
     return (
       <div className="rounded-lg border-2 border-primary/30 bg-secondary/40 p-4">
         <p className="font-semibold text-primary flex items-center gap-2">
@@ -371,9 +369,6 @@ function RaffleProofUpload({ saleId, buyerPhone }: { saleId: string; buyerPhone:
         <p className="mt-1 text-xs text-foreground/60">
           The secretariat will verify and confirm your tickets.
         </p>
-        <a href={uploadedUrl} target="_blank" rel="noreferrer" className="mt-3 inline-flex items-center gap-2 text-xs text-primary hover:underline">
-          <ImageIcon className="size-3.5" /> View uploaded screenshot
-        </a>
       </div>
     );
   }

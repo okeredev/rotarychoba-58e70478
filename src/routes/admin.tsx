@@ -1522,3 +1522,99 @@ function UsersPanel() {
     </div>
   );
 }
+
+type GoodwillMessage = Database["public"]["Tables"]["goodwill_messages"]["Row"];
+
+function GoodwillPanel() {
+  const [items, setItems] = useState<GoodwillMessage[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  const load = async () => {
+    setLoading(true);
+    const { data, error } = await supabase
+      .from("goodwill_messages")
+      .select("*")
+      .order("created_at", { ascending: false });
+    if (error) toast.error(error.message);
+    setItems(data ?? []);
+    setLoading(false);
+  };
+
+  useEffect(() => { load(); }, []);
+
+  const setStatus = async (id: string, status: "approved" | "rejected" | "pending") => {
+    const { error } = await supabase
+      .from("goodwill_messages")
+      .update({ status })
+      .eq("id", id);
+    if (error) return toast.error(error.message);
+    toast.success(`Message ${status}`);
+    load();
+  };
+
+  const remove = async (id: string) => {
+    if (!confirm("Delete this message?")) return;
+    const { error } = await supabase.from("goodwill_messages").delete().eq("id", id);
+    if (error) return toast.error(error.message);
+    toast.success("Deleted");
+    load();
+  };
+
+  return (
+    <div className="space-y-4">
+      <div className="flex items-center justify-between">
+        <h2 className="text-2xl font-semibold">Goodwill messages</h2>
+        <Button variant="outline" size="sm" onClick={load}>
+          <RefreshCw className="h-4 w-4 mr-2" /> Refresh
+        </Button>
+      </div>
+      <Card className="p-0 overflow-hidden">
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>Sender</TableHead>
+              <TableHead>Message</TableHead>
+              <TableHead>Status</TableHead>
+              <TableHead className="text-right">Actions</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {loading ? (
+              <TableRow><TableCell colSpan={4} className="text-center text-muted-foreground">Loading…</TableCell></TableRow>
+            ) : items.length === 0 ? (
+              <TableRow><TableCell colSpan={4} className="text-center text-muted-foreground">No messages yet</TableCell></TableRow>
+            ) : items.map((m) => (
+              <TableRow key={m.id}>
+                <TableCell>
+                  <div className="font-medium">{m.sender_name}</div>
+                  {m.sender_role && <div className="text-xs text-muted-foreground">{m.sender_role}</div>}
+                </TableCell>
+                <TableCell className="max-w-md whitespace-pre-wrap">{m.message}</TableCell>
+                <TableCell>
+                  <Badge variant={m.status === "approved" ? "default" : m.status === "rejected" ? "destructive" : "secondary"}>
+                    {m.status}
+                  </Badge>
+                </TableCell>
+                <TableCell className="text-right space-x-2">
+                  {m.status !== "approved" && (
+                    <Button size="sm" variant="outline" onClick={() => setStatus(m.id, "approved")}>
+                      <Check className="h-4 w-4" />
+                    </Button>
+                  )}
+                  {m.status !== "rejected" && (
+                    <Button size="sm" variant="outline" onClick={() => setStatus(m.id, "rejected")}>
+                      <X className="h-4 w-4" />
+                    </Button>
+                  )}
+                  <Button size="sm" variant="ghost" onClick={() => remove(m.id)}>
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
+                </TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+      </Card>
+    </div>
+  );
+}

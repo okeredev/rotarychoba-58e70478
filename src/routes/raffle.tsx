@@ -6,7 +6,7 @@ import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { ArrowLeft, Check, Copy, ImageIcon, Ticket, Upload } from "lucide-react";
+import { ArrowLeft, Check, Copy, Ticket, Upload } from "lucide-react";
 import { fetchBankInfo, DEFAULT_BANK, type BankInfo } from "@/lib/settings";
 import { EVENT } from "@/lib/tiers";
 import { supabase } from "@/integrations/supabase/client";

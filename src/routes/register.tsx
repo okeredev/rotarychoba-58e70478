@@ -13,7 +13,7 @@ import {
 import { TIERS, formatNGN, EVENT, type TierKey } from "@/lib/tiers";
 import { fetchBankInfo, DEFAULT_BANK, type BankInfo } from "@/lib/settings";
 import { toast } from "sonner";
-import { ArrowLeft, Check, Copy, Printer, Calendar, MapPin, Upload, ImageIcon } from "lucide-react";
+import { ArrowLeft, Check, Copy, Printer, Calendar, MapPin, Upload } from "lucide-react";
 import rotaryWheel from "@/assets/rotary-wheel.png";
 import { ReceiptWatermark, ReceiptVerifyBlock, RECEIPT_LOCKED_CLASS } from "@/components/receipt-security";
 

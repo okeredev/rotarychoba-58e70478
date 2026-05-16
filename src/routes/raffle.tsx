@@ -18,12 +18,12 @@ export const Route = createFileRoute("/raffle")({
   head: () => ({
     meta: [
       { title: "Buy a Raffle Ticket — Rotary Club of Choba-Uniport" },
-      {
-        name: "description",
-        content:
-          "Support Service Above Self projects. Buy a single raffle ticket for ₦500 or a pack of 20 for ₦5,000.",
-      },
+      { name: "description", content: "Support Service Above Self projects. Buy a single raffle ticket for ₦500 or a pack of 20 for ₦5,000." },
+      { property: "og:title", content: "Buy a Raffle Ticket — Rotary Choba-Uniport" },
+      { property: "og:description", content: "Support Service Above Self projects — buy a raffle ticket and stand a chance to win at the 16th Installation Ceremony." },
+      { property: "og:url", content: "https://16th.rotaryclubofchobauniport.org/raffle" },
     ],
+    links: [{ rel: "canonical", href: "https://16th.rotaryclubofchobauniport.org/raffle" }],
   }),
 });
 
@@ -313,7 +313,7 @@ function Row({ label, value, k, copy, copied, mono }: { label: string; value: st
         <div className="text-xs uppercase tracking-wider text-foreground/60">{label}</div>
         <div className={`${mono ? "font-mono" : ""} font-medium`}>{value}</div>
       </div>
-      <Button size="sm" variant="ghost" onClick={() => copy(value, k)}>
+      <Button size="sm" variant="ghost" onClick={() => copy(value, k)} aria-label={`Copy ${label.toLowerCase()}`}>
         {copied === k ? <Check className="size-4" /> : <Copy className="size-4" />}
       </Button>
     </div>

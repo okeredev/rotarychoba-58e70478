@@ -10,6 +10,7 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as SponsorRouteImport } from './routes/sponsor'
+import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
 import { Route as RegisterRouteImport } from './routes/register'
 import { Route as ReceiptRouteImport } from './routes/receipt'
 import { Route as RaffleRouteImport } from './routes/raffle'
@@ -20,6 +21,11 @@ import { Route as AdminLoginRouteImport } from './routes/admin_.login'
 const SponsorRoute = SponsorRouteImport.update({
   id: '/sponsor',
   path: '/sponsor',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SitemapDotxmlRoute = SitemapDotxmlRouteImport.update({
+  id: '/sitemap.xml',
+  path: '/sitemap.xml',
   getParentRoute: () => rootRouteImport,
 } as any)
 const RegisterRoute = RegisterRouteImport.update({
@@ -59,6 +65,7 @@ export interface FileRoutesByFullPath {
   '/raffle': typeof RaffleRoute
   '/receipt': typeof ReceiptRoute
   '/register': typeof RegisterRoute
+  '/sitemap.xml': typeof SitemapDotxmlRoute
   '/sponsor': typeof SponsorRoute
   '/admin/login': typeof AdminLoginRoute
 }
@@ -68,6 +75,7 @@ export interface FileRoutesByTo {
   '/raffle': typeof RaffleRoute
   '/receipt': typeof ReceiptRoute
   '/register': typeof RegisterRoute
+  '/sitemap.xml': typeof SitemapDotxmlRoute
   '/sponsor': typeof SponsorRoute
   '/admin/login': typeof AdminLoginRoute
 }
@@ -78,6 +86,7 @@ export interface FileRoutesById {
   '/raffle': typeof RaffleRoute
   '/receipt': typeof ReceiptRoute
   '/register': typeof RegisterRoute
+  '/sitemap.xml': typeof SitemapDotxmlRoute
   '/sponsor': typeof SponsorRoute
   '/admin_/login': typeof AdminLoginRoute
 }
@@ -89,6 +98,7 @@ export interface FileRouteTypes {
     | '/raffle'
     | '/receipt'
     | '/register'
+    | '/sitemap.xml'
     | '/sponsor'
     | '/admin/login'
   fileRoutesByTo: FileRoutesByTo
@@ -98,6 +108,7 @@ export interface FileRouteTypes {
     | '/raffle'
     | '/receipt'
     | '/register'
+    | '/sitemap.xml'
     | '/sponsor'
     | '/admin/login'
   id:
@@ -107,6 +118,7 @@ export interface FileRouteTypes {
     | '/raffle'
     | '/receipt'
     | '/register'
+    | '/sitemap.xml'
     | '/sponsor'
     | '/admin_/login'
   fileRoutesById: FileRoutesById
@@ -117,6 +129,7 @@ export interface RootRouteChildren {
   RaffleRoute: typeof RaffleRoute
   ReceiptRoute: typeof ReceiptRoute
   RegisterRoute: typeof RegisterRoute
+  SitemapDotxmlRoute: typeof SitemapDotxmlRoute
   SponsorRoute: typeof SponsorRoute
   AdminLoginRoute: typeof AdminLoginRoute
 }
@@ -128,6 +141,13 @@ declare module '@tanstack/react-router' {
       path: '/sponsor'
       fullPath: '/sponsor'
       preLoaderRoute: typeof SponsorRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/sitemap.xml': {
+      id: '/sitemap.xml'
+      path: '/sitemap.xml'
+      fullPath: '/sitemap.xml'
+      preLoaderRoute: typeof SitemapDotxmlRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/register': {
@@ -181,9 +201,20 @@ const rootRouteChildren: RootRouteChildren = {
   RaffleRoute: RaffleRoute,
   ReceiptRoute: ReceiptRoute,
   RegisterRoute: RegisterRoute,
+  SitemapDotxmlRoute: SitemapDotxmlRoute,
   SponsorRoute: SponsorRoute,
   AdminLoginRoute: AdminLoginRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}

@@ -370,9 +370,9 @@ function RegistrationsPanel() {
                       </SelectContent>
                     </Select>
                     {r.payment_proof_url ? (
-                      <a href={r.payment_proof_url} target="_blank" rel="noreferrer" className="mt-1 inline-block text-xs text-primary hover:underline">
+                      <button type="button" onClick={() => openProofInNewTab(r.payment_proof_url)} className="mt-1 inline-block text-xs text-primary hover:underline">
                         View proof
-                      </a>
+                      </button>
                     ) : (
                       r.payment_method === "pay_now" && <div className="mt-1 text-xs text-muted-foreground">No proof yet</div>
                     )}
@@ -421,8 +421,22 @@ function triggerDownload(blob: Blob, filename: string) {
   URL.revokeObjectURL(url);
 }
 
+const escHtml = (v: unknown) =>
+  String(v ?? "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#39;");
+
+async function openProofInNewTab(pathOrUrl: string | null) {
+  if (!pathOrUrl) return;
+  let url = pathOrUrl;
+  if (!/^https?:\/\//i.test(pathOrUrl)) {
+    const { data, error } = await supabase.storage.from("payment-proofs").createSignedUrl(pathOrUrl, 3600);
+    if (error || !data) { toast.error(error?.message || "Could not open proof"); return; }
+    url = data.signedUrl;
+  }
+  window.open(url, "_blank", "noopener");
+}
+
 function printSlip(r: Registration) {
-  const ref = displayRef(r);
+  const ref = escHtml(displayRef(r));
   const html = `<!doctype html><html><head><meta charset="utf-8"/><title>Slip ${ref}</title>
     <style>
       body{font-family:system-ui,-apple-system,sans-serif;padding:32px;color:#0a1f44;max-width:640px;margin:auto}
@@ -439,19 +453,19 @@ function printSlip(r: Registration) {
     <p class="muted">16th Installation · Registration Slip</p>
     <div class="ref">REF: ${ref}</div>
     <table>
-      <tr><td>Attendee</td><td>${[r.title, r.full_name].filter(Boolean).join(" ")}</td></tr>
-      <tr><td>Email</td><td>${r.email ?? "—"}</td></tr>
-      <tr><td>Phone</td><td>${r.phone}</td></tr>
-      <tr><td>Position / Org</td><td>${[r.position, r.organization].filter(Boolean).join(" · ") || "—"}</td></tr>
-      <tr><td>Rotary Club</td><td>${r.rotary_club ?? "—"}</td></tr>
-      <tr><td>Address</td><td>${r.address ?? "—"}</td></tr>
-      <tr><td>Tier</td><td><span class="badge">${r.tier.toUpperCase()}</span></td></tr>
-      <tr><td>Amount</td><td><strong>₦${r.amount.toLocaleString()}</strong></td></tr>
-      <tr><td>Guests</td><td>${r.guests_count}</td></tr>
-      <tr><td>Payment method</td><td>${r.payment_method}</td></tr>
-      <tr><td>Payment status</td><td>${r.payment_status}</td></tr>
-      <tr><td>Internal ID</td><td style="font-family:ui-monospace,monospace;font-size:11px">${r.id}</td></tr>
-      <tr><td>Registered</td><td>${new Date(r.created_at).toLocaleString()}</td></tr>
+      <tr><td>Attendee</td><td>${escHtml([r.title, r.full_name].filter(Boolean).join(" "))}</td></tr>
+      <tr><td>Email</td><td>${escHtml(r.email ?? "—")}</td></tr>
+      <tr><td>Phone</td><td>${escHtml(r.phone)}</td></tr>
+      <tr><td>Position / Org</td><td>${escHtml([r.position, r.organization].filter(Boolean).join(" · ") || "—")}</td></tr>
+      <tr><td>Rotary Club</td><td>${escHtml(r.rotary_club ?? "—")}</td></tr>
+      <tr><td>Address</td><td>${escHtml(r.address ?? "—")}</td></tr>
+      <tr><td>Tier</td><td><span class="badge">${escHtml(r.tier.toUpperCase())}</span></td></tr>
+      <tr><td>Amount</td><td><strong>₦${escHtml(r.amount.toLocaleString())}</strong></td></tr>
+      <tr><td>Guests</td><td>${escHtml(String(r.guests_count))}</td></tr>
+      <tr><td>Payment method</td><td>${escHtml(r.payment_method)}</td></tr>
+      <tr><td>Payment status</td><td>${escHtml(r.payment_status)}</td></tr>
+      <tr><td>Internal ID</td><td style="font-family:ui-monospace,monospace;font-size:11px">${escHtml(r.id)}</td></tr>
+      <tr><td>Registered</td><td>${escHtml(new Date(r.created_at).toLocaleString())}</td></tr>
     </table>
     <p class="muted" style="margin-top:24px">Please present this slip at the venue.</p>
     <button onclick="window.print()" style="margin-top:16px;padding:8px 16px;background:#0a1f44;color:#fff;border:0;border-radius:6px;cursor:pointer">Print</button>
@@ -465,20 +479,26 @@ function printSlip(r: Registration) {
 async function downloadPaymentProof(r: Registration) {
   if (!r.payment_proof_url) return;
   try {
-    const res = await fetch(r.payment_proof_url);
+    let url = r.payment_proof_url;
+    if (!/^https?:\/\//i.test(url)) {
+      const { data, error } = await supabase.storage.from("payment-proofs").createSignedUrl(url, 3600);
+      if (error || !data) throw new Error(error?.message || "Could not sign URL");
+      url = data.signedUrl;
+    }
+    const res = await fetch(url);
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     const blob = await res.blob();
-    const ext = (r.payment_proof_url.split("?")[0].split(".").pop() || "jpg").toLowerCase();
+    const ext = (url.split("?")[0].split(".").pop() || "jpg").toLowerCase();
     const ref = displayRef(r);
     const safeName = r.full_name.replace(/[^a-z0-9]+/gi, "-").toLowerCase();
-    const url = URL.createObjectURL(blob);
+    const objUrl = URL.createObjectURL(blob);
     const a = document.createElement("a");
-    a.href = url;
+    a.href = objUrl;
     a.download = `payment-proof-${ref}-${safeName}.${ext}`;
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
-    URL.revokeObjectURL(url);
+    URL.revokeObjectURL(objUrl);
     toast.success("Proof downloaded");
   } catch (e) {
     toast.error(`Could not download: ${(e as Error).message}`);
@@ -591,13 +611,16 @@ function RegistrationDetailDialog({ registration, open, onOpenChange, onPrint, o
           <div className="mt-3">
             <div className="flex items-center justify-between mb-1">
               <p className="text-xs text-muted-foreground">Payment proof</p>
-              <Button size="sm" variant="outline" onClick={() => downloadPaymentProof(r)}>
-                <Download className="size-4 mr-1" /> Download
-              </Button>
+              <div className="flex gap-2">
+                <Button size="sm" variant="outline" onClick={() => openProofInNewTab(r.payment_proof_url)}>
+                  <Eye className="size-4 mr-1" /> Open
+                </Button>
+                <Button size="sm" variant="outline" onClick={() => downloadPaymentProof(r)}>
+                  <Download className="size-4 mr-1" /> Download
+                </Button>
+              </div>
             </div>
-            <a href={r.payment_proof_url} target="_blank" rel="noreferrer">
-              <img src={r.payment_proof_url} alt="Payment proof" className="max-h-72 rounded border" />
-            </a>
+            <p className="text-xs text-muted-foreground italic">Click Open to view in a new tab (signed URL, expires after 1 hour).</p>
           </div>
         )}
         <DialogFooter className="gap-2 sm:gap-2">

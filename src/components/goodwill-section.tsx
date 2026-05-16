@@ -141,6 +141,7 @@ export function GoodwillSection() {
                 value={form.sender_name}
                 onChange={(e) => setForm({ ...form, sender_name: e.target.value })}
                 maxLength={120}
+                placeholder="Your Full Name or Organization."
                 required
               />
             </div>

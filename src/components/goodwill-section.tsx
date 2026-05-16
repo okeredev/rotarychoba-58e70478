@@ -189,7 +189,7 @@ export function GoodwillSection() {
             )}
             {!photoPreview && (
               <p className="text-xs text-muted-foreground mt-1 flex items-center gap-1">
-                <ImagePlus className="size-3" /> A clear portrait works best.
+                <ImagePlus className="size-3" /> A clear portrait photograph of you or a scanned / softcopy of your goodwill writeup.
               </p>
             )}
           </div>

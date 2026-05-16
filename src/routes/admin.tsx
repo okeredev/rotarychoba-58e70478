@@ -1524,10 +1524,23 @@ function UsersPanel() {
 }
 
 type GoodwillMessage = Database["public"]["Tables"]["goodwill_messages"]["Row"];
+type GoodwillStatusFilter = "all" | "pending" | "approved" | "rejected";
+
+const GOODWILL_BUCKET = "goodwill-photos";
+
+function goodwillPhotoUrl(pathOrUrl: string | null): string | null {
+  if (!pathOrUrl) return null;
+  if (/^https?:\/\//i.test(pathOrUrl)) return pathOrUrl;
+  return supabase.storage.from(GOODWILL_BUCKET).getPublicUrl(pathOrUrl).data.publicUrl;
+}
 
 function GoodwillPanel() {
   const [items, setItems] = useState<GoodwillMessage[]>([]);
   const [loading, setLoading] = useState(true);
+  const [search, setSearch] = useState("");
+  const [statusFilter, setStatusFilter] = useState<GoodwillStatusFilter>("all");
+  const [dateFrom, setDateFrom] = useState("");
+  const [dateTo, setDateTo] = useState("");
 
   const load = async () => {
     setLoading(true);
@@ -1560,58 +1573,141 @@ function GoodwillPanel() {
     load();
   };
 
+  const q = search.trim().toLowerCase();
+  const fromTs = dateFrom ? new Date(dateFrom).getTime() : null;
+  const toTs = dateTo ? new Date(dateTo).getTime() + 24 * 60 * 60 * 1000 - 1 : null;
+  const filtered = items.filter((m) => {
+    if (statusFilter !== "all" && m.status !== statusFilter) return false;
+    if (q) {
+      const hay = `${m.sender_name} ${m.sender_role ?? ""} ${m.message}`.toLowerCase();
+      if (!hay.includes(q)) return false;
+    }
+    const ts = m.created_at ? new Date(m.created_at).getTime() : 0;
+    if (fromTs !== null && ts < fromTs) return false;
+    if (toTs !== null && ts > toTs) return false;
+    return true;
+  });
+
+  const counts = {
+    all: items.length,
+    pending: items.filter((m) => m.status === "pending").length,
+    approved: items.filter((m) => m.status === "approved").length,
+    rejected: items.filter((m) => m.status === "rejected").length,
+  };
+
+  const clearFilters = () => { setSearch(""); setStatusFilter("all"); setDateFrom(""); setDateTo(""); };
+
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between flex-wrap gap-2">
         <h2 className="text-2xl font-semibold">Goodwill messages</h2>
         <Button variant="outline" size="sm" onClick={load}>
           <RefreshCw className="h-4 w-4 mr-2" /> Refresh
         </Button>
       </div>
+
+      <Card className="p-4 space-y-3">
+        <div className="flex flex-wrap gap-2">
+          {(["all", "pending", "approved", "rejected"] as const).map((s) => (
+            <Button
+              key={s}
+              size="sm"
+              variant={statusFilter === s ? "default" : "outline"}
+              onClick={() => setStatusFilter(s)}
+              className="capitalize"
+            >
+              {s} <span className="ml-2 text-xs opacity-70">{counts[s]}</span>
+            </Button>
+          ))}
+        </div>
+        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+          <div className="lg:col-span-2">
+            <Label htmlFor="gw-search" className="text-xs">Search</Label>
+            <Input
+              id="gw-search"
+              placeholder="Name, role or message…"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+            />
+          </div>
+          <div>
+            <Label htmlFor="gw-from" className="text-xs">From</Label>
+            <Input id="gw-from" type="date" value={dateFrom} onChange={(e) => setDateFrom(e.target.value)} />
+          </div>
+          <div>
+            <Label htmlFor="gw-to" className="text-xs">To</Label>
+            <Input id="gw-to" type="date" value={dateTo} onChange={(e) => setDateTo(e.target.value)} />
+          </div>
+        </div>
+        <div className="flex items-center justify-between text-xs text-muted-foreground">
+          <span>Showing {filtered.length} of {items.length}</span>
+          {(search || statusFilter !== "all" || dateFrom || dateTo) && (
+            <Button variant="ghost" size="sm" onClick={clearFilters}>Clear filters</Button>
+          )}
+        </div>
+      </Card>
+
       <Card className="p-0 overflow-hidden">
         <Table>
           <TableHeader>
             <TableRow>
+              <TableHead>Photo</TableHead>
               <TableHead>Sender</TableHead>
               <TableHead>Message</TableHead>
+              <TableHead>Submitted</TableHead>
               <TableHead>Status</TableHead>
               <TableHead className="text-right">Actions</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {loading ? (
-              <TableRow><TableCell colSpan={4} className="text-center text-muted-foreground">Loading…</TableCell></TableRow>
-            ) : items.length === 0 ? (
-              <TableRow><TableCell colSpan={4} className="text-center text-muted-foreground">No messages yet</TableCell></TableRow>
-            ) : items.map((m) => (
-              <TableRow key={m.id}>
-                <TableCell>
-                  <div className="font-medium">{m.sender_name}</div>
-                  {m.sender_role && <div className="text-xs text-muted-foreground">{m.sender_role}</div>}
-                </TableCell>
-                <TableCell className="max-w-md whitespace-pre-wrap">{m.message}</TableCell>
-                <TableCell>
-                  <Badge variant={m.status === "approved" ? "default" : m.status === "rejected" ? "destructive" : "secondary"}>
-                    {m.status}
-                  </Badge>
-                </TableCell>
-                <TableCell className="text-right space-x-2">
-                  {m.status !== "approved" && (
-                    <Button size="sm" variant="outline" onClick={() => setStatus(m.id, "approved")}>
-                      <Check className="h-4 w-4" />
+              <TableRow><TableCell colSpan={6} className="text-center text-muted-foreground">Loading…</TableCell></TableRow>
+            ) : filtered.length === 0 ? (
+              <TableRow><TableCell colSpan={6} className="text-center text-muted-foreground">No messages match your filters</TableCell></TableRow>
+            ) : filtered.map((m) => {
+              const url = goodwillPhotoUrl(m.photo_url);
+              return (
+                <TableRow key={m.id}>
+                  <TableCell>
+                    {url ? (
+                      <a href={url} target="_blank" rel="noopener noreferrer">
+                        <img src={url} alt="" className="w-12 h-12 rounded object-cover border" />
+                      </a>
+                    ) : (
+                      <span className="text-xs text-muted-foreground">—</span>
+                    )}
+                  </TableCell>
+                  <TableCell>
+                    <div className="font-medium">{m.sender_name}</div>
+                    {m.sender_role && <div className="text-xs text-muted-foreground">{m.sender_role}</div>}
+                  </TableCell>
+                  <TableCell className="max-w-md whitespace-pre-wrap">{m.message}</TableCell>
+                  <TableCell className="text-xs text-muted-foreground whitespace-nowrap">
+                    {m.created_at ? new Date(m.created_at).toLocaleDateString() : "—"}
+                  </TableCell>
+                  <TableCell>
+                    <Badge variant={m.status === "approved" ? "default" : m.status === "rejected" ? "destructive" : "secondary"}>
+                      {m.status}
+                    </Badge>
+                  </TableCell>
+                  <TableCell className="text-right space-x-2 whitespace-nowrap">
+                    {m.status !== "approved" && (
+                      <Button size="sm" variant="outline" onClick={() => setStatus(m.id, "approved")} title="Approve">
+                        <Check className="h-4 w-4" />
+                      </Button>
+                    )}
+                    {m.status !== "rejected" && (
+                      <Button size="sm" variant="outline" onClick={() => setStatus(m.id, "rejected")} title="Reject">
+                        <X className="h-4 w-4" />
+                      </Button>
+                    )}
+                    <Button size="sm" variant="ghost" onClick={() => remove(m.id)} title="Delete">
+                      <Trash2 className="h-4 w-4" />
                     </Button>
-                  )}
-                  {m.status !== "rejected" && (
-                    <Button size="sm" variant="outline" onClick={() => setStatus(m.id, "rejected")}>
-                      <X className="h-4 w-4" />
-                    </Button>
-                  )}
-                  <Button size="sm" variant="ghost" onClick={() => remove(m.id)}>
-                    <Trash2 className="h-4 w-4" />
-                  </Button>
-                </TableCell>
-              </TableRow>
-            ))}
+                  </TableCell>
+                </TableRow>
+              );
+            })}
           </TableBody>
         </Table>
       </Card>

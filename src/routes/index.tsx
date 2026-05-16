@@ -103,6 +103,7 @@ function Landing() {
                 <SheetClose asChild><a href="#president" className="rounded-md px-3 py-2 hover:bg-accent">President</a></SheetClose>
                 <SheetClose asChild><a href="#leadership" className="rounded-md px-3 py-2 hover:bg-accent">Leadership</a></SheetClose>
                 <SheetClose asChild><a href="#awards" className="rounded-md px-3 py-2 hover:bg-accent">Awards</a></SheetClose>
+                <SheetClose asChild><a href="#goodwill" className="rounded-md px-3 py-2 hover:bg-accent">Goodwill</a></SheetClose>
                 <SheetClose asChild><Link to="/sponsor" className="rounded-md px-3 py-2 hover:bg-accent">Sponsor</Link></SheetClose>
                 <SheetClose asChild><Link to="/raffle" className="rounded-md px-3 py-2 hover:bg-accent">Raffle</Link></SheetClose>
                 <SheetClose asChild><Link to="/receipt" className="rounded-md px-3 py-2 hover:bg-accent">My slip</Link></SheetClose>

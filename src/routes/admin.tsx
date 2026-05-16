@@ -1,6 +1,6 @@
 import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { listAdmins, inviteAdmin, revokeAdmin, updateAdminStatus, updateAdminRole, type AdminUser } from "@/lib/admin-users.functions";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -1541,6 +1541,11 @@ function GoodwillPanel() {
   const [statusFilter, setStatusFilter] = useState<GoodwillStatusFilter>("all");
   const [dateFrom, setDateFrom] = useState("");
   const [dateTo, setDateTo] = useState("");
+  const [sortOrder, setSortOrder] = useState<"newest" | "oldest">("newest");
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
+  const replaceInputRef = useRef<HTMLInputElement | null>(null);
+  const [replaceTargetId, setReplaceTargetId] = useState<string | null>(null);
 
   const load = async () => {
     setLoading(true);
@@ -1554,6 +1559,7 @@ function GoodwillPanel() {
   };
 
   useEffect(() => { load(); }, []);
+  useEffect(() => { setPage(1); }, [search, statusFilter, dateFrom, dateTo, sortOrder, pageSize]);
 
   const setStatus = async (id: string, status: "approved" | "rejected" | "pending") => {
     const { error } = await supabase
@@ -1567,10 +1573,65 @@ function GoodwillPanel() {
 
   const remove = async (id: string) => {
     if (!confirm("Delete this message?")) return;
+    const msg = items.find((i) => i.id === id);
+    if (msg?.photo_url && !/^https?:\/\//i.test(msg.photo_url)) {
+      await supabase.storage.from(GOODWILL_BUCKET).remove([msg.photo_url]);
+    }
     const { error } = await supabase.from("goodwill_messages").delete().eq("id", id);
     if (error) return toast.error(error.message);
     toast.success("Deleted");
     load();
+  };
+
+  const removePhoto = async (m: GoodwillMessage) => {
+    if (!m.photo_url) return;
+    if (!confirm("Remove this photo from the submission?")) return;
+    if (!/^https?:\/\//i.test(m.photo_url)) {
+      await supabase.storage.from(GOODWILL_BUCKET).remove([m.photo_url]);
+    }
+    const { error } = await supabase
+      .from("goodwill_messages")
+      .update({ photo_url: null })
+      .eq("id", m.id);
+    if (error) return toast.error(error.message);
+    toast.success("Photo removed");
+    load();
+  };
+
+  const triggerReplace = (id: string) => {
+    setReplaceTargetId(id);
+    replaceInputRef.current?.click();
+  };
+
+  const onReplaceFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    const id = replaceTargetId;
+    e.target.value = "";
+    setReplaceTargetId(null);
+    if (!file || !id) return;
+    if (!file.type.startsWith("image/")) return toast.error("Please choose an image file");
+    if (file.size > 5 * 1024 * 1024) return toast.error("Image must be under 5MB");
+    const m = items.find((i) => i.id === id);
+    try {
+      const ext = file.name.split(".").pop()?.toLowerCase().replace(/[^a-z0-9]/g, "") || "jpg";
+      const path = `${crypto.randomUUID()}.${ext}`;
+      const { error: upErr } = await supabase.storage.from(GOODWILL_BUCKET).upload(path, file, {
+        contentType: file.type, upsert: false,
+      });
+      if (upErr) throw upErr;
+      if (m?.photo_url && !/^https?:\/\//i.test(m.photo_url)) {
+        await supabase.storage.from(GOODWILL_BUCKET).remove([m.photo_url]);
+      }
+      const { error } = await supabase
+        .from("goodwill_messages")
+        .update({ photo_url: path })
+        .eq("id", id);
+      if (error) throw error;
+      toast.success("Photo replaced");
+      load();
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Failed to replace photo");
+    }
   };
 
   const q = search.trim().toLowerCase();
@@ -1588,6 +1649,16 @@ function GoodwillPanel() {
     return true;
   });
 
+  const sorted = [...filtered].sort((a, b) => {
+    const ta = a.created_at ? new Date(a.created_at).getTime() : 0;
+    const tb = b.created_at ? new Date(b.created_at).getTime() : 0;
+    return sortOrder === "newest" ? tb - ta : ta - tb;
+  });
+
+  const totalPages = Math.max(1, Math.ceil(sorted.length / pageSize));
+  const currentPage = Math.min(page, totalPages);
+  const paginated = sorted.slice((currentPage - 1) * pageSize, currentPage * pageSize);
+
   const counts = {
     all: items.length,
     pending: items.filter((m) => m.status === "pending").length,
@@ -1597,13 +1668,47 @@ function GoodwillPanel() {
 
   const clearFilters = () => { setSearch(""); setStatusFilter("all"); setDateFrom(""); setDateTo(""); };
 
+  const exportCsv = () => {
+    const headers = ["Sender", "Role", "Status", "Submitted", "Photo URL", "Message"];
+    const escape = (v: string) => `"${v.replace(/"/g, '""')}"`;
+    const rows = sorted.map((m) => [
+      m.sender_name ?? "",
+      m.sender_role ?? "",
+      m.status ?? "",
+      m.created_at ? new Date(m.created_at).toISOString() : "",
+      goodwillPhotoUrl(m.photo_url) ?? "",
+      (m.message ?? "").replace(/\r?\n/g, " "),
+    ].map(escape).join(","));
+    const csv = [headers.map(escape).join(","), ...rows].join("\n");
+    const blob = new Blob(["\ufeff" + csv], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `goodwill-messages-${new Date().toISOString().slice(0, 10)}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+    toast.success(`Exported ${sorted.length} message${sorted.length === 1 ? "" : "s"}`);
+  };
+
   return (
     <div className="space-y-4">
+      <input
+        ref={replaceInputRef}
+        type="file"
+        accept="image/*"
+        className="hidden"
+        onChange={onReplaceFile}
+      />
       <div className="flex items-center justify-between flex-wrap gap-2">
         <h2 className="text-2xl font-semibold">Goodwill messages</h2>
-        <Button variant="outline" size="sm" onClick={load}>
-          <RefreshCw className="h-4 w-4 mr-2" /> Refresh
-        </Button>
+        <div className="flex gap-2">
+          <Button variant="outline" size="sm" onClick={exportCsv} disabled={sorted.length === 0}>
+            <Download className="h-4 w-4 mr-2" /> Export CSV
+          </Button>
+          <Button variant="outline" size="sm" onClick={load}>
+            <RefreshCw className="h-4 w-4 mr-2" /> Refresh
+          </Button>
+        </div>
       </div>
 
       <Card className="p-4 space-y-3">
@@ -1639,11 +1744,32 @@ function GoodwillPanel() {
             <Input id="gw-to" type="date" value={dateTo} onChange={(e) => setDateTo(e.target.value)} />
           </div>
         </div>
-        <div className="flex items-center justify-between text-xs text-muted-foreground">
-          <span>Showing {filtered.length} of {items.length}</span>
-          {(search || statusFilter !== "all" || dateFrom || dateTo) && (
-            <Button variant="ghost" size="sm" onClick={clearFilters}>Clear filters</Button>
-          )}
+        <div className="flex items-center justify-between flex-wrap gap-2 text-xs text-muted-foreground">
+          <span>Showing {paginated.length} of {sorted.length} (total {items.length})</span>
+          <div className="flex items-center gap-2">
+            <Label htmlFor="gw-sort" className="text-xs">Sort</Label>
+            <select
+              id="gw-sort"
+              value={sortOrder}
+              onChange={(e) => setSortOrder(e.target.value as "newest" | "oldest")}
+              className="h-8 rounded-md border border-input bg-background px-2 text-xs"
+            >
+              <option value="newest">Newest first</option>
+              <option value="oldest">Oldest first</option>
+            </select>
+            <Label htmlFor="gw-size" className="text-xs ml-2">Per page</Label>
+            <select
+              id="gw-size"
+              value={pageSize}
+              onChange={(e) => setPageSize(Number(e.target.value))}
+              className="h-8 rounded-md border border-input bg-background px-2 text-xs"
+            >
+              {[10, 25, 50, 100].map((n) => <option key={n} value={n}>{n}</option>)}
+            </select>
+            {(search || statusFilter !== "all" || dateFrom || dateTo) && (
+              <Button variant="ghost" size="sm" onClick={clearFilters}>Clear filters</Button>
+            )}
+          </div>
         </div>
       </Card>
 
@@ -1662,20 +1788,32 @@ function GoodwillPanel() {
           <TableBody>
             {loading ? (
               <TableRow><TableCell colSpan={6} className="text-center text-muted-foreground">Loading…</TableCell></TableRow>
-            ) : filtered.length === 0 ? (
+            ) : paginated.length === 0 ? (
               <TableRow><TableCell colSpan={6} className="text-center text-muted-foreground">No messages match your filters</TableCell></TableRow>
-            ) : filtered.map((m) => {
+            ) : paginated.map((m) => {
               const url = goodwillPhotoUrl(m.photo_url);
               return (
                 <TableRow key={m.id}>
                   <TableCell>
-                    {url ? (
-                      <a href={url} target="_blank" rel="noopener noreferrer">
-                        <img src={url} alt="" className="w-12 h-12 rounded object-cover border" />
-                      </a>
-                    ) : (
-                      <span className="text-xs text-muted-foreground">—</span>
-                    )}
+                    <div className="flex flex-col items-start gap-1">
+                      {url ? (
+                        <a href={url} target="_blank" rel="noopener noreferrer">
+                          <img src={url} alt="" className="w-12 h-12 rounded object-cover border" />
+                        </a>
+                      ) : (
+                        <span className="text-xs text-muted-foreground">—</span>
+                      )}
+                      <div className="flex gap-1">
+                        <Button size="sm" variant="ghost" className="h-6 px-2 text-[10px]" onClick={() => triggerReplace(m.id)} title="Replace photo">
+                          <Upload className="h-3 w-3" />
+                        </Button>
+                        {m.photo_url && (
+                          <Button size="sm" variant="ghost" className="h-6 px-2 text-[10px]" onClick={() => removePhoto(m)} title="Remove photo">
+                            <X className="h-3 w-3" />
+                          </Button>
+                        )}
+                      </div>
+                    </div>
                   </TableCell>
                   <TableCell>
                     <div className="font-medium">{m.sender_name}</div>
@@ -1710,6 +1848,17 @@ function GoodwillPanel() {
             })}
           </TableBody>
         </Table>
+        {!loading && sorted.length > 0 && (
+          <div className="flex items-center justify-between p-3 border-t text-xs">
+            <span className="text-muted-foreground">Page {currentPage} of {totalPages}</span>
+            <div className="flex gap-2">
+              <Button size="sm" variant="outline" disabled={currentPage <= 1} onClick={() => setPage(1)}>First</Button>
+              <Button size="sm" variant="outline" disabled={currentPage <= 1} onClick={() => setPage(currentPage - 1)}>Prev</Button>
+              <Button size="sm" variant="outline" disabled={currentPage >= totalPages} onClick={() => setPage(currentPage + 1)}>Next</Button>
+              <Button size="sm" variant="outline" disabled={currentPage >= totalPages} onClick={() => setPage(totalPages)}>Last</Button>
+            </div>
+          </div>
+        )}
       </Card>
     </div>
   );

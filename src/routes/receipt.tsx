@@ -13,6 +13,17 @@ import { ReceiptWatermark, ReceiptVerifyBlock, RECEIPT_LOCKED_CLASS } from "@/co
 
 export const Route = createFileRoute("/receipt")({
   component: ReceiptLookup,
+  head: () => ({
+    meta: [
+      { title: "My slip — Rotary Club of Choba-Uniport" },
+      { name: "description", content: "Look up and download your registration slip for the 16th Installation Ceremony." },
+      { name: "robots", content: "noindex" },
+      { property: "og:title", content: "My slip — Rotary Club of Choba-Uniport" },
+      { property: "og:description", content: "Look up and download your registration slip." },
+      { property: "og:url", content: "https://16th.rotaryclubofchobauniport.org/receipt" },
+    ],
+    links: [{ rel: "canonical", href: "https://16th.rotaryclubofchobauniport.org/receipt" }],
+  }),
 });
 
 type Reg = {

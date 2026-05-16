@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { TIERS, formatNGN, EVENT } from "@/lib/tiers";
 import { Calendar, MapPin, Sparkles, Check, ArrowRight, User, Menu } from "lucide-react";
+import { GoodwillSection } from "@/components/goodwill-section";
 import { Sheet, SheetContent, SheetTrigger, SheetHeader, SheetTitle, SheetClose } from "@/components/ui/sheet";
 import { supabase } from "@/integrations/supabase/client";
 import rotaryWheel from "@/assets/rotary-wheel.png";
@@ -75,6 +76,7 @@ function Landing() {
             <a href="#president" className="text-foreground/80 hover:text-primary transition">President</a>
             <a href="#leadership" className="text-foreground/80 hover:text-primary transition">Leadership</a>
             <a href="#awards" className="text-foreground/80 hover:text-primary transition">Awards</a>
+            <a href="#goodwill" className="text-foreground/80 hover:text-primary transition">Goodwill</a>
             <Link to="/sponsor" className="text-foreground/80 hover:text-primary transition">Sponsor</Link>
             <Link to="/raffle" className="text-foreground/80 hover:text-primary transition">Raffle</Link>
             <Link to="/receipt" className="text-foreground/80 hover:text-primary transition">My slip</Link>
@@ -365,6 +367,8 @@ function Landing() {
           </div>
         )}
       </section>
+
+      <GoodwillSection />
 
       {/* Footer */}
       <footer className="border-t border-border bg-sidebar text-sidebar-foreground">

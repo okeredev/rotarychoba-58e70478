@@ -6,7 +6,7 @@ import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { ArrowLeft, Check, Copy, ImageIcon, Ticket, Upload } from "lucide-react";
+import { ArrowLeft, Check, Copy, Ticket, Upload } from "lucide-react";
 import { fetchBankInfo, DEFAULT_BANK, type BankInfo } from "@/lib/settings";
 import { EVENT } from "@/lib/tiers";
 import { supabase } from "@/integrations/supabase/client";
@@ -18,12 +18,12 @@ export const Route = createFileRoute("/raffle")({
   head: () => ({
     meta: [
       { title: "Buy a Raffle Ticket — Rotary Club of Choba-Uniport" },
-      {
-        name: "description",
-        content:
-          "Support Service Above Self projects. Buy a single raffle ticket for ₦500 or a pack of 20 for ₦5,000.",
-      },
+      { name: "description", content: "Support Service Above Self projects. Buy a single raffle ticket for ₦500 or a pack of 20 for ₦5,000." },
+      { property: "og:title", content: "Buy a Raffle Ticket — Rotary Choba-Uniport" },
+      { property: "og:description", content: "Support Service Above Self projects — buy a raffle ticket and stand a chance to win at the 16th Installation Ceremony." },
+      { property: "og:url", content: "https://16th.rotaryclubofchobauniport.org/raffle" },
     ],
+    links: [{ rel: "canonical", href: "https://16th.rotaryclubofchobauniport.org/raffle" }],
   }),
 });
 
@@ -313,7 +313,7 @@ function Row({ label, value, k, copy, copied, mono }: { label: string; value: st
         <div className="text-xs uppercase tracking-wider text-foreground/60">{label}</div>
         <div className={`${mono ? "font-mono" : ""} font-medium`}>{value}</div>
       </div>
-      <Button size="sm" variant="ghost" onClick={() => copy(value, k)}>
+      <Button size="sm" variant="ghost" onClick={() => copy(value, k)} aria-label={`Copy ${label.toLowerCase()}`}>
         {copied === k ? <Check className="size-4" /> : <Copy className="size-4" />}
       </Button>
     </div>
@@ -322,7 +322,7 @@ function Row({ label, value, k, copy, copied, mono }: { label: string; value: st
 
 function RaffleProofUpload({ saleId, buyerPhone }: { saleId: string; buyerPhone: string }) {
   const [uploading, setUploading] = useState(false);
-  const [uploadedUrl, setUploadedUrl] = useState<string | null>(null);
+  const [done, setDone] = useState(false);
 
   async function handleFile(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
@@ -346,11 +346,9 @@ function RaffleProofUpload({ saleId, buyerPhone }: { saleId: string; buyerPhone:
       toast.error(upErr.message);
       return;
     }
-    const { data: pub } = supabase.storage.from("payment-proofs").getPublicUrl(path);
-    const url = pub.publicUrl;
     const { error: rpcErr } = await supabase.rpc("attach_raffle_payment_proof", {
       sale_id: saleId,
-      proof_url: url,
+      proof_url: path,
       buyer_phone_input: buyerPhone,
     });
     setUploading(false);
@@ -358,11 +356,11 @@ function RaffleProofUpload({ saleId, buyerPhone }: { saleId: string; buyerPhone:
       toast.error(rpcErr.message);
       return;
     }
-    setUploadedUrl(url);
+    setDone(true);
     toast.success("Payment proof uploaded");
   }
 
-  if (uploadedUrl) {
+  if (done) {
     return (
       <div className="rounded-lg border-2 border-primary/30 bg-secondary/40 p-4">
         <p className="font-semibold text-primary flex items-center gap-2">
@@ -371,9 +369,6 @@ function RaffleProofUpload({ saleId, buyerPhone }: { saleId: string; buyerPhone:
         <p className="mt-1 text-xs text-foreground/60">
           The secretariat will verify and confirm your tickets.
         </p>
-        <a href={uploadedUrl} target="_blank" rel="noreferrer" className="mt-3 inline-flex items-center gap-2 text-xs text-primary hover:underline">
-          <ImageIcon className="size-3.5" /> View uploaded screenshot
-        </a>
       </div>
     );
   }

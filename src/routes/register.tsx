@@ -13,7 +13,7 @@ import {
 import { TIERS, formatNGN, EVENT, type TierKey } from "@/lib/tiers";
 import { fetchBankInfo, DEFAULT_BANK, type BankInfo } from "@/lib/settings";
 import { toast } from "sonner";
-import { ArrowLeft, Check, Copy, Printer, Calendar, MapPin, Upload, ImageIcon } from "lucide-react";
+import { ArrowLeft, Check, Copy, Printer, Calendar, MapPin, Upload } from "lucide-react";
 import rotaryWheel from "@/assets/rotary-wheel.png";
 import { ReceiptWatermark, ReceiptVerifyBlock, RECEIPT_LOCKED_CLASS } from "@/components/receipt-security";
 
@@ -26,6 +26,16 @@ export const Route = createFileRoute("/register")({
     tier: tierSchema.parse(s.tier),
   }),
   component: Register,
+  head: () => ({
+    meta: [
+      { title: "Register — 16th Installation Ceremony · Rotary Choba-Uniport" },
+      { name: "description", content: "Reserve your seat at the 16th Installation Ceremony. Standard, Premium and VIP tiers — pay at the venue or by bank transfer." },
+      { property: "og:title", content: "Register — 16th Installation Ceremony" },
+      { property: "og:description", content: "Reserve your seat at the 16th Installation Ceremony of the Rotary Club of Choba-Uniport." },
+      { property: "og:url", content: "https://16th.rotaryclubofchobauniport.org/register" },
+    ],
+    links: [{ rel: "canonical", href: "https://16th.rotaryclubofchobauniport.org/register" }],
+  }),
 });
 
 const formSchema = z.object({
@@ -494,15 +504,15 @@ function Field({
 
 function SectionHeading({ children }: { children: React.ReactNode }) {
   return (
-    <p className="text-xs uppercase tracking-[0.2em] text-gold font-semibold border-b border-border pb-2">
+    <h2 className="text-xs uppercase tracking-[0.2em] text-gold font-semibold border-b border-border pb-2">
       {children}
-    </p>
+    </h2>
   );
 }
 
 function ProofUpload({ registrationId }: { registrationId: string }) {
   const [uploading, setUploading] = useState(false);
-  const [uploadedUrl, setUploadedUrl] = useState<string | null>(null);
+  const [done, setDone] = useState(false);
 
   async function handleFile(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
@@ -526,31 +536,26 @@ function ProofUpload({ registrationId }: { registrationId: string }) {
       toast.error(upErr.message);
       return;
     }
-    const { data: pub } = supabase.storage.from("payment-proofs").getPublicUrl(path);
-    const url = pub.publicUrl;
     const { error: rpcErr } = await supabase.rpc("attach_payment_proof", {
       reg_id: registrationId,
-      proof_url: url,
+      proof_url: path,
     });
     setUploading(false);
     if (rpcErr) {
       toast.error(rpcErr.message);
       return;
     }
-    setUploadedUrl(url);
+    setDone(true);
     toast.success("Payment proof uploaded");
   }
 
-  if (uploadedUrl) {
+  if (done) {
     return (
       <div className="rounded-lg border-2 border-primary/30 bg-secondary/40 p-4 print:hidden">
         <p className="font-semibold text-primary flex items-center gap-2">
           <Check className="size-4" /> Payment proof received
         </p>
         <p className="mt-1 text-xs text-muted-foreground">The secretariat will verify and confirm your payment.</p>
-        <a href={uploadedUrl} target="_blank" rel="noreferrer" className="mt-3 inline-flex items-center gap-2 text-xs text-primary hover:underline">
-          <ImageIcon className="size-3.5" /> View uploaded screenshot
-        </a>
       </div>
     );
   }

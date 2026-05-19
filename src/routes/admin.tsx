@@ -1702,14 +1702,16 @@ function GoodwillPanel() {
   const clearFilters = () => { setSearch(""); setStatusFilter("all"); setDateFrom(""); setDateTo(""); };
 
   const exportCsv = () => {
-    const headers = ["Sender", "Role", "Status", "Submitted", "Photo URL", "Message"];
+    const headers = ["Sender", "Role", "Status", "Submitted", "Event Year", "Photo URL", "Document URL", "Message"];
     const escape = (v: string) => `"${v.replace(/"/g, '""')}"`;
     const rows = sorted.map((m) => [
       m.sender_name ?? "",
       m.sender_role ?? "",
       m.status ?? "",
       m.created_at ? new Date(m.created_at).toISOString() : "",
+      m.event_year ? String(m.event_year) : "",
       goodwillPhotoUrl(m.photo_url) ?? "",
+      goodwillDocUrl(m.document_url) ?? "",
       (m.message ?? "").replace(/\r?\n/g, " "),
     ].map(escape).join(","));
     const csv = [headers.map(escape).join(","), ...rows].join("\n");

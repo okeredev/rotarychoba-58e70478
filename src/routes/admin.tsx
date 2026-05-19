@@ -1737,6 +1737,7 @@ function GoodwillPanel() {
       <div className="flex items-center justify-between flex-wrap gap-2">
         <h2 className="text-2xl font-semibold">Goodwill messages</h2>
         <div className="flex gap-2">
+          <GoodwillBackfillDialog onCreated={load} />
           <Button variant="outline" size="sm" onClick={exportCsv} disabled={sorted.length === 0}>
             <Download className="h-4 w-4 mr-2" /> Export CSV
           </Button>

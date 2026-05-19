@@ -1828,6 +1828,7 @@ function GoodwillPanel() {
               <TableRow><TableCell colSpan={6} className="text-center text-muted-foreground">No messages match your filters</TableCell></TableRow>
             ) : paginated.map((m) => {
               const url = goodwillPhotoUrl(m.photo_url);
+              const docUrl = goodwillDocUrl(m.document_url);
               return (
                 <TableRow key={m.id}>
                   <TableCell>
@@ -1852,8 +1853,21 @@ function GoodwillPanel() {
                     </div>
                   </TableCell>
                   <TableCell>
-                    <div className="font-medium">{m.sender_name}</div>
+                    <div className="font-medium">
+                      {m.sender_name}
+                      {m.event_year && <span className="ml-1 text-[10px] text-muted-foreground">({m.event_year})</span>}
+                    </div>
                     {m.sender_role && <div className="text-xs text-muted-foreground">{m.sender_role}</div>}
+                    {docUrl && (
+                      <div className="mt-1 flex items-center gap-1">
+                        <a href={docUrl} target="_blank" rel="noopener noreferrer" className="text-[11px] text-primary inline-flex items-center gap-1 hover:underline">
+                          <FileText className="h-3 w-3" /> Document
+                        </a>
+                        <Button size="sm" variant="ghost" className="h-5 w-5 p-0" onClick={() => removeDocument(m)} title="Remove document">
+                          <X className="h-3 w-3" />
+                        </Button>
+                      </div>
+                    )}
                   </TableCell>
                   <TableCell className="max-w-md whitespace-pre-wrap">{m.message}</TableCell>
                   <TableCell className="text-xs text-muted-foreground whitespace-nowrap">

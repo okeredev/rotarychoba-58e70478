@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Heart, Quote, ImagePlus, X } from "lucide-react";
+import { Heart, Quote, ImagePlus, X, FileText } from "lucide-react";
 import { toast } from "sonner";
 
 type GoodwillRow = {
@@ -14,16 +14,20 @@ type GoodwillRow = {
   sender_role: string | null;
   message: string;
   photo_url: string | null;
+  document_url: string | null;
+  event_year: number | null;
 };
 
-const BUCKET = "goodwill-photos";
+const PHOTO_BUCKET = "goodwill-photos";
+const DOC_BUCKET = "goodwill-documents";
 
-function publicPhotoUrl(pathOrUrl: string | null): string | null {
+function publicUrl(bucket: string, pathOrUrl: string | null): string | null {
   if (!pathOrUrl) return null;
   if (/^https?:\/\//i.test(pathOrUrl)) return pathOrUrl;
-  const { data } = supabase.storage.from(BUCKET).getPublicUrl(pathOrUrl);
-  return data.publicUrl;
+  return supabase.storage.from(bucket).getPublicUrl(pathOrUrl).data.publicUrl;
 }
+
+const DOC_ACCEPT = ".pdf,.doc,.docx,.txt,.rtf,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,text/plain,application/rtf";
 
 export function GoodwillSection() {
   const [items, setItems] = useState<GoodwillRow[]>([]);
@@ -31,12 +35,14 @@ export function GoodwillSection() {
   const [form, setForm] = useState({ sender_name: "", sender_role: "", message: "" });
   const [photo, setPhoto] = useState<File | null>(null);
   const [photoPreview, setPhotoPreview] = useState<string | null>(null);
-  const fileRef = useRef<HTMLInputElement>(null);
+  const [doc, setDoc] = useState<File | null>(null);
+  const photoRef = useRef<HTMLInputElement>(null);
+  const docRef = useRef<HTMLInputElement>(null);
 
   const load = async () => {
     const { data } = await supabase
       .from("goodwill_messages")
-      .select("id, sender_name, sender_role, message, photo_url")
+      .select("id, sender_name, sender_role, message, photo_url, document_url, event_year")
       .eq("status", "approved")
       .order("sort_order", { ascending: true })
       .order("created_at", { ascending: false });
@@ -54,6 +60,23 @@ export function GoodwillSection() {
     setPhotoPreview(URL.createObjectURL(file));
   };
 
+  const onPickDoc = (file: File | null) => {
+    if (!file) { setDoc(null); return; }
+    if (file.size > 10 * 1024 * 1024) { toast.error("Document must be under 10MB"); return; }
+    setDoc(file);
+  };
+
+  const uploadTo = async (bucket: string, file: File): Promise<string> => {
+    const ext = file.name.split(".").pop()?.toLowerCase().replace(/[^a-z0-9]/g, "") || "bin";
+    const path = `${crypto.randomUUID()}.${ext}`;
+    const { error } = await supabase.storage.from(bucket).upload(path, file, {
+      contentType: file.type || undefined,
+      upsert: false,
+    });
+    if (error) throw error;
+    return path;
+  };
+
   const onSubmit = async (e: FormEvent) => {
     e.preventDefault();
     if (form.sender_name.trim().length < 2 || form.message.trim().length < 5) {
@@ -62,29 +85,23 @@ export function GoodwillSection() {
     }
     setSubmitting(true);
     try {
-      let photo_path: string | null = null;
-      if (photo) {
-        const ext = photo.name.split(".").pop()?.toLowerCase().replace(/[^a-z0-9]/g, "") || "jpg";
-        const path = `${crypto.randomUUID()}.${ext}`;
-        const { error: upErr } = await supabase.storage.from(BUCKET).upload(path, photo, {
-          contentType: photo.type,
-          upsert: false,
-        });
-        if (upErr) throw upErr;
-        photo_path = path;
-      }
+      const photo_path = photo ? await uploadTo(PHOTO_BUCKET, photo) : null;
+      const doc_path = doc ? await uploadTo(DOC_BUCKET, doc) : null;
       const { error } = await supabase.from("goodwill_messages").insert({
         sender_name: form.sender_name.trim(),
         sender_role: form.sender_role.trim() || null,
         message: form.message.trim(),
         photo_url: photo_path,
+        document_url: doc_path,
         status: "pending",
       });
       if (error) throw error;
       toast.success("Thank you! Your message will appear after review.");
       setForm({ sender_name: "", sender_role: "", message: "" });
       onPickPhoto(null);
-      if (fileRef.current) fileRef.current.value = "";
+      onPickDoc(null);
+      if (photoRef.current) photoRef.current.value = "";
+      if (docRef.current) docRef.current.value = "";
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Submission failed");
     } finally {
@@ -107,7 +124,8 @@ export function GoodwillSection() {
       {items.length > 0 && (
         <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3 mb-10">
           {items.map((m) => {
-            const url = publicPhotoUrl(m.photo_url);
+            const url = publicUrl(PHOTO_BUCKET, m.photo_url);
+            const docUrl = publicUrl(DOC_BUCKET, m.document_url);
             return (
               <Card key={m.id} className="p-5 border-2 border-border bg-card flex flex-col">
                 {url && (
@@ -120,9 +138,22 @@ export function GoodwillSection() {
                 )}
                 <Quote className="size-5 text-gold mb-2" />
                 <p className="text-sm text-foreground/90 whitespace-pre-wrap">{m.message}</p>
-                <p className="mt-4 font-display font-bold text-primary text-sm">{m.sender_name}</p>
+                <p className="mt-4 font-display font-bold text-primary text-sm">
+                  {m.sender_name}
+                  {m.event_year && <span className="ml-2 text-xs font-normal text-muted-foreground">({m.event_year})</span>}
+                </p>
                 {m.sender_role && (
                   <p className="text-xs uppercase tracking-widest text-muted-foreground">{m.sender_role}</p>
+                )}
+                {docUrl && (
+                  <a
+                    href={docUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="mt-3 inline-flex items-center gap-1 text-xs text-primary hover:underline"
+                  >
+                    <FileText className="size-3" /> View attached document
+                  </a>
                 )}
               </Card>
             );
@@ -167,31 +198,53 @@ export function GoodwillSection() {
               required
             />
           </div>
-          <div>
-            <Label htmlFor="gw-photo">Photo (optional, max 5MB)</Label>
-            <div className="flex items-center gap-3 mt-1">
-              <Input
-                id="gw-photo"
-                ref={fileRef}
-                type="file"
-                accept="image/*"
-                onChange={(e) => onPickPhoto(e.target.files?.[0] ?? null)}
-                className="cursor-pointer"
-              />
-              {photoPreview && (
-                <Button type="button" variant="ghost" size="sm" onClick={() => { onPickPhoto(null); if (fileRef.current) fileRef.current.value = ""; }}>
-                  <X className="size-4" />
-                </Button>
+          <div className="grid gap-4 sm:grid-cols-2">
+            <div>
+              <Label htmlFor="gw-photo">Photo (optional, max 5MB)</Label>
+              <div className="flex items-center gap-3 mt-1">
+                <Input
+                  id="gw-photo"
+                  ref={photoRef}
+                  type="file"
+                  accept="image/*"
+                  onChange={(e) => onPickPhoto(e.target.files?.[0] ?? null)}
+                  className="cursor-pointer"
+                />
+                {photoPreview && (
+                  <Button type="button" variant="ghost" size="sm" onClick={() => { onPickPhoto(null); if (photoRef.current) photoRef.current.value = ""; }}>
+                    <X className="size-4" />
+                  </Button>
+                )}
+              </div>
+              {photoPreview ? (
+                <img src={photoPreview} alt="Preview" className="mt-3 w-32 h-32 object-cover rounded-md border" />
+              ) : (
+                <p className="text-xs text-muted-foreground mt-1 flex items-center gap-1">
+                  <ImagePlus className="size-3" /> A clear portrait photograph of you.
+                </p>
               )}
             </div>
-            {photoPreview && (
-              <img src={photoPreview} alt="Preview" className="mt-3 w-32 h-32 object-cover rounded-md border" />
-            )}
-            {!photoPreview && (
+            <div>
+              <Label htmlFor="gw-doc">Document (optional, max 10MB)</Label>
+              <div className="flex items-center gap-3 mt-1">
+                <Input
+                  id="gw-doc"
+                  ref={docRef}
+                  type="file"
+                  accept={DOC_ACCEPT}
+                  onChange={(e) => onPickDoc(e.target.files?.[0] ?? null)}
+                  className="cursor-pointer"
+                />
+                {doc && (
+                  <Button type="button" variant="ghost" size="sm" onClick={() => { onPickDoc(null); if (docRef.current) docRef.current.value = ""; }}>
+                    <X className="size-4" />
+                  </Button>
+                )}
+              </div>
               <p className="text-xs text-muted-foreground mt-1 flex items-center gap-1">
-                <ImagePlus className="size-3" /> A clear portrait photograph of you or a scanned / softcopy of your goodwill writeup.
+                <FileText className="size-3" /> {doc ? doc.name : "PDF, Word or text writeup (optional)."}
               </p>
-            )}
+            </div>
           </div>
           <Button type="submit" disabled={submitting} className="w-full sm:w-auto">
             {submitting ? "Sending…" : "Send goodwill message"}

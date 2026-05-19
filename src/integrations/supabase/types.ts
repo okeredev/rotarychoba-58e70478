@@ -32,6 +32,39 @@ export type Database = {
         }
         Relationships: []
       }
+      audit_logs: {
+        Row: {
+          action: string
+          actor_email: string | null
+          actor_id: string | null
+          created_at: string
+          details: Json
+          entity_id: string | null
+          entity_type: string
+          id: string
+        }
+        Insert: {
+          action: string
+          actor_email?: string | null
+          actor_id?: string | null
+          created_at?: string
+          details?: Json
+          entity_id?: string | null
+          entity_type: string
+          id?: string
+        }
+        Update: {
+          action?: string
+          actor_email?: string | null
+          actor_id?: string | null
+          created_at?: string
+          details?: Json
+          entity_id?: string | null
+          entity_type?: string
+          id?: string
+        }
+        Relationships: []
+      }
       awards: {
         Row: {
           citation: string | null
@@ -104,6 +137,8 @@ export type Database = {
       goodwill_messages: {
         Row: {
           created_at: string
+          document_url: string | null
+          event_year: number | null
           id: string
           message: string
           photo_url: string | null
@@ -115,6 +150,8 @@ export type Database = {
         }
         Insert: {
           created_at?: string
+          document_url?: string | null
+          event_year?: number | null
           id?: string
           message: string
           photo_url?: string | null
@@ -126,6 +163,8 @@ export type Database = {
         }
         Update: {
           created_at?: string
+          document_url?: string | null
+          event_year?: number | null
           id?: string
           message?: string
           photo_url?: string | null

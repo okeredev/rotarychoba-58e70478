@@ -22,8 +22,9 @@ import { Badge } from "@/components/ui/badge";
 import { TIERS, formatNGN } from "@/lib/tiers";
 import { fetchBankInfo, saveBankInfo, DEFAULT_BANK, type BankInfo } from "@/lib/settings";
 import { toast } from "sonner";
-import { LogOut, Search, Users, Wallet, Crown, RefreshCw, Plus, Trash2, Pencil, Upload, Download, LayoutDashboard, Handshake, Ticket, Award as AwardIcon, Settings as SettingsIcon, ExternalLink, Eye, Printer, Info, Heart, Check, X } from "lucide-react";
+import { LogOut, Search, Users, Wallet, Crown, RefreshCw, Plus, Trash2, Pencil, Upload, Download, LayoutDashboard, Handshake, Ticket, Award as AwardIcon, Settings as SettingsIcon, ExternalLink, Eye, Printer, Info, Heart, Check, X, FileText, ScrollText } from "lucide-react";
 import type { Database } from "@/integrations/supabase/types";
+import { logAudit } from "@/lib/audit";
 import {
   Sidebar, SidebarContent, SidebarGroup, SidebarGroupContent, SidebarGroupLabel,
   SidebarMenu, SidebarMenuItem, SidebarMenuButton, SidebarProvider, SidebarTrigger, SidebarFooter,
@@ -103,6 +104,7 @@ function AdminDashboard() {
     { key: "awards", label: "Awards", icon: AwardIcon },
     { key: "members", label: "Leadership & Board", icon: Crown },
     { key: "goodwill", label: "Goodwill messages", icon: Heart },
+    { key: "audit", label: "Audit logs", icon: ScrollText },
     { key: "users", label: "Admin users", icon: Users },
     { key: "settings", label: "Settings", icon: SettingsIcon },
   ];
@@ -182,6 +184,7 @@ function AdminDashboard() {
             {section === "awards" && <AwardsPanel />}
             {section === "members" && <MembersPanel />}
             {section === "goodwill" && <GoodwillPanel />}
+            {section === "audit" && <AuditLogsPanel />}
             {section === "users" && <UsersPanel />}
             {section === "settings" && <SettingsPanel />}
           </main>
@@ -1527,11 +1530,18 @@ type GoodwillMessage = Database["public"]["Tables"]["goodwill_messages"]["Row"];
 type GoodwillStatusFilter = "all" | "pending" | "approved" | "rejected";
 
 const GOODWILL_BUCKET = "goodwill-photos";
+const GOODWILL_DOC_BUCKET = "goodwill-documents";
 
 function goodwillPhotoUrl(pathOrUrl: string | null): string | null {
   if (!pathOrUrl) return null;
   if (/^https?:\/\//i.test(pathOrUrl)) return pathOrUrl;
   return supabase.storage.from(GOODWILL_BUCKET).getPublicUrl(pathOrUrl).data.publicUrl;
+}
+
+function goodwillDocUrl(pathOrUrl: string | null): string | null {
+  if (!pathOrUrl) return null;
+  if (/^https?:\/\//i.test(pathOrUrl)) return pathOrUrl;
+  return supabase.storage.from(GOODWILL_DOC_BUCKET).getPublicUrl(pathOrUrl).data.publicUrl;
 }
 
 function GoodwillPanel() {
@@ -1567,6 +1577,7 @@ function GoodwillPanel() {
       .update({ status })
       .eq("id", id);
     if (error) return toast.error(error.message);
+    await logAudit(`goodwill.${status}`, "goodwill_messages", id, { status });
     toast.success(`Message ${status}`);
     load();
   };
@@ -1577,8 +1588,12 @@ function GoodwillPanel() {
     if (msg?.photo_url && !/^https?:\/\//i.test(msg.photo_url)) {
       await supabase.storage.from(GOODWILL_BUCKET).remove([msg.photo_url]);
     }
+    if (msg?.document_url && !/^https?:\/\//i.test(msg.document_url)) {
+      await supabase.storage.from(GOODWILL_DOC_BUCKET).remove([msg.document_url]);
+    }
     const { error } = await supabase.from("goodwill_messages").delete().eq("id", id);
     if (error) return toast.error(error.message);
+    await logAudit("goodwill.delete", "goodwill_messages", id, { sender_name: msg?.sender_name });
     toast.success("Deleted");
     load();
   };
@@ -1594,7 +1609,24 @@ function GoodwillPanel() {
       .update({ photo_url: null })
       .eq("id", m.id);
     if (error) return toast.error(error.message);
+    await logAudit("goodwill.photo_remove", "goodwill_messages", m.id, {});
     toast.success("Photo removed");
+    load();
+  };
+
+  const removeDocument = async (m: GoodwillMessage) => {
+    if (!m.document_url) return;
+    if (!confirm("Remove the attached document?")) return;
+    if (!/^https?:\/\//i.test(m.document_url)) {
+      await supabase.storage.from(GOODWILL_DOC_BUCKET).remove([m.document_url]);
+    }
+    const { error } = await supabase
+      .from("goodwill_messages")
+      .update({ document_url: null })
+      .eq("id", m.id);
+    if (error) return toast.error(error.message);
+    await logAudit("goodwill.document_remove", "goodwill_messages", m.id, {});
+    toast.success("Document removed");
     load();
   };
 
@@ -1627,6 +1659,7 @@ function GoodwillPanel() {
         .update({ photo_url: path })
         .eq("id", id);
       if (error) throw error;
+      await logAudit("goodwill.photo_replace", "goodwill_messages", id, { path });
       toast.success("Photo replaced");
       load();
     } catch (err) {
@@ -1669,14 +1702,16 @@ function GoodwillPanel() {
   const clearFilters = () => { setSearch(""); setStatusFilter("all"); setDateFrom(""); setDateTo(""); };
 
   const exportCsv = () => {
-    const headers = ["Sender", "Role", "Status", "Submitted", "Photo URL", "Message"];
+    const headers = ["Sender", "Role", "Status", "Submitted", "Event Year", "Photo URL", "Document URL", "Message"];
     const escape = (v: string) => `"${v.replace(/"/g, '""')}"`;
     const rows = sorted.map((m) => [
       m.sender_name ?? "",
       m.sender_role ?? "",
       m.status ?? "",
       m.created_at ? new Date(m.created_at).toISOString() : "",
+      m.event_year ? String(m.event_year) : "",
       goodwillPhotoUrl(m.photo_url) ?? "",
+      goodwillDocUrl(m.document_url) ?? "",
       (m.message ?? "").replace(/\r?\n/g, " "),
     ].map(escape).join(","));
     const csv = [headers.map(escape).join(","), ...rows].join("\n");
@@ -1702,6 +1737,7 @@ function GoodwillPanel() {
       <div className="flex items-center justify-between flex-wrap gap-2">
         <h2 className="text-2xl font-semibold">Goodwill messages</h2>
         <div className="flex gap-2">
+          <GoodwillBackfillDialog onCreated={load} />
           <Button variant="outline" size="sm" onClick={exportCsv} disabled={sorted.length === 0}>
             <Download className="h-4 w-4 mr-2" /> Export CSV
           </Button>
@@ -1792,6 +1828,7 @@ function GoodwillPanel() {
               <TableRow><TableCell colSpan={6} className="text-center text-muted-foreground">No messages match your filters</TableCell></TableRow>
             ) : paginated.map((m) => {
               const url = goodwillPhotoUrl(m.photo_url);
+              const docUrl = goodwillDocUrl(m.document_url);
               return (
                 <TableRow key={m.id}>
                   <TableCell>
@@ -1816,8 +1853,21 @@ function GoodwillPanel() {
                     </div>
                   </TableCell>
                   <TableCell>
-                    <div className="font-medium">{m.sender_name}</div>
+                    <div className="font-medium">
+                      {m.sender_name}
+                      {m.event_year && <span className="ml-1 text-[10px] text-muted-foreground">({m.event_year})</span>}
+                    </div>
                     {m.sender_role && <div className="text-xs text-muted-foreground">{m.sender_role}</div>}
+                    {docUrl && (
+                      <div className="mt-1 flex items-center gap-1">
+                        <a href={docUrl} target="_blank" rel="noopener noreferrer" className="text-[11px] text-primary inline-flex items-center gap-1 hover:underline">
+                          <FileText className="h-3 w-3" /> Document
+                        </a>
+                        <Button size="sm" variant="ghost" className="h-5 w-5 p-0" onClick={() => removeDocument(m)} title="Remove document">
+                          <X className="h-3 w-3" />
+                        </Button>
+                      </div>
+                    )}
                   </TableCell>
                   <TableCell className="max-w-md whitespace-pre-wrap">{m.message}</TableCell>
                   <TableCell className="text-xs text-muted-foreground whitespace-nowrap">
@@ -1856,6 +1906,294 @@ function GoodwillPanel() {
               <Button size="sm" variant="outline" disabled={currentPage <= 1} onClick={() => setPage(currentPage - 1)}>Prev</Button>
               <Button size="sm" variant="outline" disabled={currentPage >= totalPages} onClick={() => setPage(currentPage + 1)}>Next</Button>
               <Button size="sm" variant="outline" disabled={currentPage >= totalPages} onClick={() => setPage(totalPages)}>Last</Button>
+            </div>
+          </div>
+        )}
+      </Card>
+    </div>
+  );
+}
+
+// ---------- Goodwill backfill dialog ----------
+function GoodwillBackfillDialog({ onCreated }: { onCreated: () => void }) {
+  const [open, setOpen] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [form, setForm] = useState({
+    sender_name: "",
+    sender_role: "",
+    message: "",
+    event_year: new Date().getFullYear(),
+  });
+  const [photo, setPhoto] = useState<File | null>(null);
+  const [doc, setDoc] = useState<File | null>(null);
+
+  const reset = () => {
+    setForm({ sender_name: "", sender_role: "", message: "", event_year: new Date().getFullYear() });
+    setPhoto(null);
+    setDoc(null);
+  };
+
+  const uploadTo = async (bucket: string, file: File): Promise<string> => {
+    const ext = file.name.split(".").pop()?.toLowerCase().replace(/[^a-z0-9]/g, "") || "bin";
+    const path = `${crypto.randomUUID()}.${ext}`;
+    const { error } = await supabase.storage.from(bucket).upload(path, file, {
+      contentType: file.type || undefined, upsert: false,
+    });
+    if (error) throw error;
+    return path;
+  };
+
+  const submit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (form.sender_name.trim().length < 2 || form.message.trim().length < 3) {
+      return toast.error("Sender name and message are required");
+    }
+    setSaving(true);
+    try {
+      const photo_url = photo ? await uploadTo(GOODWILL_BUCKET, photo) : null;
+      const document_url = doc ? await uploadTo(GOODWILL_DOC_BUCKET, doc) : null;
+      const { data, error } = await supabase.from("goodwill_messages").insert({
+        sender_name: form.sender_name.trim(),
+        sender_role: form.sender_role.trim() || null,
+        message: form.message.trim(),
+        event_year: form.event_year || null,
+        photo_url,
+        document_url,
+        status: "approved",
+      }).select("id").maybeSingle();
+      if (error) throw error;
+      await logAudit("goodwill.backfill", "goodwill_messages", data?.id ?? null, {
+        event_year: form.event_year,
+        sender_name: form.sender_name,
+      });
+      toast.success("Backfilled entry added");
+      reset();
+      setOpen(false);
+      onCreated();
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Failed to add entry");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={setOpen}>
+      <DialogTrigger asChild>
+        <Button variant="outline" size="sm">
+          <Plus className="h-4 w-4 mr-2" /> Backfill past event
+        </Button>
+      </DialogTrigger>
+      <DialogContent className="max-w-lg">
+        <DialogHeader>
+          <DialogTitle>Add a goodwill message from a past event</DialogTitle>
+        </DialogHeader>
+        <form onSubmit={submit} className="space-y-3">
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <Label className="text-xs">Sender name *</Label>
+              <Input value={form.sender_name} onChange={(e) => setForm({ ...form, sender_name: e.target.value })} required />
+            </div>
+            <div>
+              <Label className="text-xs">Event year *</Label>
+              <Input
+                type="number"
+                min={1900}
+                max={2100}
+                value={form.event_year}
+                onChange={(e) => setForm({ ...form, event_year: Number(e.target.value) })}
+                required
+              />
+            </div>
+          </div>
+          <div>
+            <Label className="text-xs">Role / title</Label>
+            <Input value={form.sender_role} onChange={(e) => setForm({ ...form, sender_role: e.target.value })} placeholder="e.g. PDG, District 9141" />
+          </div>
+          <div>
+            <Label className="text-xs">Message *</Label>
+            <Textarea rows={4} value={form.message} onChange={(e) => setForm({ ...form, message: e.target.value })} required />
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <Label className="text-xs">Photo</Label>
+              <Input type="file" accept="image/*" onChange={(e) => setPhoto(e.target.files?.[0] ?? null)} />
+            </div>
+            <div>
+              <Label className="text-xs">Document</Label>
+              <Input type="file" accept=".pdf,.doc,.docx,.txt,.rtf" onChange={(e) => setDoc(e.target.files?.[0] ?? null)} />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button type="button" variant="outline" onClick={() => setOpen(false)}>Cancel</Button>
+            <Button type="submit" disabled={saving}>{saving ? "Saving…" : "Add entry (approved)"}</Button>
+          </DialogFooter>
+        </form>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+// ---------- Audit logs ----------
+type AuditLogRow = {
+  id: string;
+  actor_id: string | null;
+  actor_email: string | null;
+  action: string;
+  entity_type: string;
+  entity_id: string | null;
+  details: unknown;
+  created_at: string;
+};
+
+function AuditLogsPanel() {
+  const [rows, setRows] = useState<AuditLogRow[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [search, setSearch] = useState("");
+  const [actionFilter, setActionFilter] = useState("all");
+  const [entityFilter, setEntityFilter] = useState("all");
+  const [page, setPage] = useState(1);
+  const pageSize = 25;
+
+  const load = async () => {
+    setLoading(true);
+    const { data, error } = await supabase
+      .from("audit_logs" as never)
+      .select("*")
+      .order("created_at", { ascending: false })
+      .limit(1000);
+    if (error) toast.error(error.message);
+    setRows((data as AuditLogRow[]) ?? []);
+    setLoading(false);
+  };
+
+  useEffect(() => { load(); }, []);
+  useEffect(() => { setPage(1); }, [search, actionFilter, entityFilter]);
+
+  const actions = useMemo(() => Array.from(new Set(rows.map((r) => r.action))).sort(), [rows]);
+  const entities = useMemo(() => Array.from(new Set(rows.map((r) => r.entity_type))).sort(), [rows]);
+
+  const q = search.trim().toLowerCase();
+  const filtered = rows.filter((r) => {
+    if (actionFilter !== "all" && r.action !== actionFilter) return false;
+    if (entityFilter !== "all" && r.entity_type !== entityFilter) return false;
+    if (q) {
+      const hay = `${r.actor_email ?? ""} ${r.action} ${r.entity_type} ${r.entity_id ?? ""} ${JSON.stringify(r.details ?? {})}`.toLowerCase();
+      if (!hay.includes(q)) return false;
+    }
+    return true;
+  });
+
+  const totalPages = Math.max(1, Math.ceil(filtered.length / pageSize));
+  const currentPage = Math.min(page, totalPages);
+  const paginated = filtered.slice((currentPage - 1) * pageSize, currentPage * pageSize);
+
+  const exportCsv = () => {
+    const headers = ["When", "Actor", "Action", "Entity", "Entity ID", "Details"];
+    const escape = (v: string) => `"${v.replace(/"/g, '""')}"`;
+    const csv = [
+      headers.map(escape).join(","),
+      ...filtered.map((r) => [
+        new Date(r.created_at).toISOString(),
+        r.actor_email ?? r.actor_id ?? "",
+        r.action,
+        r.entity_type,
+        r.entity_id ?? "",
+        JSON.stringify(r.details ?? {}),
+      ].map(escape).join(",")),
+    ].join("\n");
+    const blob = new Blob(["\ufeff" + csv], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `audit-logs-${new Date().toISOString().slice(0, 10)}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
+  return (
+    <div className="space-y-4">
+      <div className="flex items-center justify-between flex-wrap gap-2">
+        <h2 className="text-2xl font-semibold">Audit logs</h2>
+        <div className="flex gap-2">
+          <Button variant="outline" size="sm" onClick={exportCsv} disabled={filtered.length === 0}>
+            <Download className="h-4 w-4 mr-2" /> Export CSV
+          </Button>
+          <Button variant="outline" size="sm" onClick={load}>
+            <RefreshCw className="h-4 w-4 mr-2" /> Refresh
+          </Button>
+        </div>
+      </div>
+
+      <Card className="p-4">
+        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+          <div className="lg:col-span-2">
+            <Label className="text-xs">Search</Label>
+            <Input placeholder="Actor, action, entity or details…" value={search} onChange={(e) => setSearch(e.target.value)} />
+          </div>
+          <div>
+            <Label className="text-xs">Action</Label>
+            <select
+              value={actionFilter}
+              onChange={(e) => setActionFilter(e.target.value)}
+              className="h-9 w-full rounded-md border border-input bg-background px-2 text-sm"
+            >
+              <option value="all">All</option>
+              {actions.map((a) => <option key={a} value={a}>{a}</option>)}
+            </select>
+          </div>
+          <div>
+            <Label className="text-xs">Entity</Label>
+            <select
+              value={entityFilter}
+              onChange={(e) => setEntityFilter(e.target.value)}
+              className="h-9 w-full rounded-md border border-input bg-background px-2 text-sm"
+            >
+              <option value="all">All</option>
+              {entities.map((a) => <option key={a} value={a}>{a}</option>)}
+            </select>
+          </div>
+        </div>
+      </Card>
+
+      <Card className="p-0 overflow-hidden">
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>When</TableHead>
+              <TableHead>Actor</TableHead>
+              <TableHead>Action</TableHead>
+              <TableHead>Entity</TableHead>
+              <TableHead>Details</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {loading ? (
+              <TableRow><TableCell colSpan={5} className="text-center text-muted-foreground">Loading…</TableCell></TableRow>
+            ) : paginated.length === 0 ? (
+              <TableRow><TableCell colSpan={5} className="text-center text-muted-foreground">No audit events</TableCell></TableRow>
+            ) : paginated.map((r) => (
+              <TableRow key={r.id}>
+                <TableCell className="text-xs whitespace-nowrap">{new Date(r.created_at).toLocaleString()}</TableCell>
+                <TableCell className="text-xs">{r.actor_email ?? r.actor_id ?? "—"}</TableCell>
+                <TableCell><Badge variant="outline">{r.action}</Badge></TableCell>
+                <TableCell className="text-xs">
+                  <div>{r.entity_type}</div>
+                  {r.entity_id && <div className="text-muted-foreground font-mono text-[10px]">{r.entity_id.slice(0, 8)}</div>}
+                </TableCell>
+                <TableCell className="text-[11px] max-w-md">
+                  <pre className="whitespace-pre-wrap break-all text-muted-foreground">{JSON.stringify(r.details ?? {}, null, 0)}</pre>
+                </TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+        {!loading && filtered.length > 0 && (
+          <div className="flex items-center justify-between p-3 border-t text-xs">
+            <span className="text-muted-foreground">Page {currentPage} of {totalPages} — {filtered.length} event{filtered.length === 1 ? "" : "s"}</span>
+            <div className="flex gap-2">
+              <Button size="sm" variant="outline" disabled={currentPage <= 1} onClick={() => setPage(currentPage - 1)}>Prev</Button>
+              <Button size="sm" variant="outline" disabled={currentPage >= totalPages} onClick={() => setPage(currentPage + 1)}>Next</Button>
             </div>
           </div>
         )}

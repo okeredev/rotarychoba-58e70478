@@ -1577,6 +1577,7 @@ function GoodwillPanel() {
       .update({ status })
       .eq("id", id);
     if (error) return toast.error(error.message);
+    await logAudit(`goodwill.${status}`, "goodwill_messages", id, { status });
     toast.success(`Message ${status}`);
     load();
   };
@@ -1587,8 +1588,12 @@ function GoodwillPanel() {
     if (msg?.photo_url && !/^https?:\/\//i.test(msg.photo_url)) {
       await supabase.storage.from(GOODWILL_BUCKET).remove([msg.photo_url]);
     }
+    if (msg?.document_url && !/^https?:\/\//i.test(msg.document_url)) {
+      await supabase.storage.from(GOODWILL_DOC_BUCKET).remove([msg.document_url]);
+    }
     const { error } = await supabase.from("goodwill_messages").delete().eq("id", id);
     if (error) return toast.error(error.message);
+    await logAudit("goodwill.delete", "goodwill_messages", id, { sender_name: msg?.sender_name });
     toast.success("Deleted");
     load();
   };
@@ -1604,7 +1609,24 @@ function GoodwillPanel() {
       .update({ photo_url: null })
       .eq("id", m.id);
     if (error) return toast.error(error.message);
+    await logAudit("goodwill.photo_remove", "goodwill_messages", m.id, {});
     toast.success("Photo removed");
+    load();
+  };
+
+  const removeDocument = async (m: GoodwillMessage) => {
+    if (!m.document_url) return;
+    if (!confirm("Remove the attached document?")) return;
+    if (!/^https?:\/\//i.test(m.document_url)) {
+      await supabase.storage.from(GOODWILL_DOC_BUCKET).remove([m.document_url]);
+    }
+    const { error } = await supabase
+      .from("goodwill_messages")
+      .update({ document_url: null })
+      .eq("id", m.id);
+    if (error) return toast.error(error.message);
+    await logAudit("goodwill.document_remove", "goodwill_messages", m.id, {});
+    toast.success("Document removed");
     load();
   };
 

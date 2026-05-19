@@ -1659,6 +1659,7 @@ function GoodwillPanel() {
         .update({ photo_url: path })
         .eq("id", id);
       if (error) throw error;
+      await logAudit("goodwill.photo_replace", "goodwill_messages", id, { path });
       toast.success("Photo replaced");
       load();
     } catch (err) {

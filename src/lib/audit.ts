@@ -15,7 +15,7 @@ export async function logAudit(
       action,
       entity_type,
       entity_id,
-      details,
+      details: details as never,
     });
   } catch (err) {
     console.warn("audit log failed", err);

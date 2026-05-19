@@ -184,6 +184,7 @@ function AdminDashboard() {
             {section === "awards" && <AwardsPanel />}
             {section === "members" && <MembersPanel />}
             {section === "goodwill" && <GoodwillPanel />}
+            {section === "audit" && <AuditLogsPanel />}
             {section === "users" && <UsersPanel />}
             {section === "settings" && <SettingsPanel />}
           </main>

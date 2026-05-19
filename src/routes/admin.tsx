@@ -104,6 +104,7 @@ function AdminDashboard() {
     { key: "awards", label: "Awards", icon: AwardIcon },
     { key: "members", label: "Leadership & Board", icon: Crown },
     { key: "goodwill", label: "Goodwill messages", icon: Heart },
+    { key: "audit", label: "Audit logs", icon: ScrollText },
     { key: "users", label: "Admin users", icon: Users },
     { key: "settings", label: "Settings", icon: SettingsIcon },
   ];

@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -7,9 +7,10 @@ import { Label } from "@/components/ui/label";
 import { Card } from "@/components/ui/card";
 import { TIERS, formatNGN, EVENT, type TierKey } from "@/lib/tiers";
 import { toast } from "sonner";
-import { ArrowLeft, Calendar, Check, MapPin, Printer, Search, Clock } from "lucide-react";
+import { ArrowLeft, Calendar, Check, MapPin, Printer, Search, Clock, Upload, Copy } from "lucide-react";
 import rotaryWheel from "@/assets/rotary-wheel.png";
 import { ReceiptWatermark, ReceiptVerifyBlock, RECEIPT_LOCKED_CLASS } from "@/components/receipt-security";
+import { fetchBankInfo, DEFAULT_BANK, type BankInfo } from "@/lib/settings";
 
 export const Route = createFileRoute("/receipt")({
   component: ReceiptLookup,
@@ -170,26 +171,129 @@ function ReceiptLookup() {
 }
 
 function PendingView({ reg, onBack }: { reg: Reg; onBack: () => void }) {
+  const [bank, setBank] = useState<BankInfo>(DEFAULT_BANK);
+  const [uploading, setUploading] = useState(false);
+  const [proofPath, setProofPath] = useState<string | null>(reg.payment_proof_url);
+  const reference = reg.id.slice(0, 8).toUpperCase();
+  const isPayNow = reg.payment_method === "pay_now";
+  const tierName = TIERS.find((t) => t.key === (reg.tier as TierKey))?.name ?? reg.tier;
+  const totalSeats = 1 + (reg.guests_count ?? 0);
+
+  useEffect(() => {
+    void fetchBankInfo().then(setBank).catch(() => {});
+  }, []);
+
+  async function handleFile(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (!file.type.startsWith("image/")) return toast.error("Please upload an image (PNG/JPG)");
+    if (file.size > 5 * 1024 * 1024) return toast.error("Image must be under 5 MB");
+    setUploading(true);
+    const ext = file.name.split(".").pop()?.toLowerCase() || "jpg";
+    const path = `${reg.id}/${Date.now()}.${ext}`;
+    const { error: upErr } = await supabase.storage
+      .from("payment-proofs")
+      .upload(path, file, { upsert: false, contentType: file.type });
+    if (upErr) { setUploading(false); return toast.error(upErr.message); }
+    const { error: rpcErr } = await supabase.rpc("attach_payment_proof", {
+      reg_id: reg.id,
+      proof_url: path,
+    });
+    setUploading(false);
+    if (rpcErr) return toast.error(rpcErr.message);
+    setProofPath(path);
+    toast.success("Payment proof uploaded — awaiting approval");
+  }
+
   return (
     <div className="min-h-screen bg-background py-10 px-6">
-      <div className="container mx-auto max-w-md text-center">
-        <div className="size-14 rounded-full mx-auto flex items-center justify-center bg-secondary border-2 border-gold">
-          <Clock className="size-7 text-primary" />
-        </div>
-        <h1 className="font-display text-2xl font-bold text-primary mt-4">Payment not yet approved</h1>
-        <p className="mt-2 text-sm text-muted-foreground">
-          Hello {reg.full_name}, your registration has been received but the secretariat
-          has not confirmed your payment yet. Your entry slip will be available here as
-          soon as it is approved.
-        </p>
-        <p className="mt-3 text-xs text-muted-foreground">
-          Status: <strong className="uppercase">{reg.payment_status}</strong>
-        </p>
-        <div className="mt-6 flex justify-center gap-3">
-          <Button variant="outline" onClick={onBack}>Try again</Button>
-          <Button asChild><Link to="/">Return home</Link></Button>
-        </div>
+      <div className="container mx-auto max-w-2xl">
+        <Link to="/receipt" onClick={onBack} className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-primary mb-4">
+          <ArrowLeft className="size-4" /> Look up another
+        </Link>
+
+        <Card className="p-6 md:p-8">
+          <div className="text-center">
+            <div className="size-14 rounded-full mx-auto flex items-center justify-center bg-secondary border-2 border-gold">
+              <Clock className="size-7 text-primary" />
+            </div>
+            <h1 className="font-display text-2xl font-bold text-primary mt-4">
+              {proofPath ? "Awaiting approval" : "Continue your registration"}
+            </h1>
+            <p className="mt-2 text-sm text-muted-foreground">
+              Hello {reg.full_name}, your registration <strong className="font-mono">#{reference}</strong> is{" "}
+              <strong className="uppercase">{reg.payment_status}</strong>.
+              {proofPath
+                ? " Your payment proof has been received. The secretariat will verify and approve shortly."
+                : isPayNow
+                  ? " Complete your bank transfer and upload your payment screenshot below to finish."
+                  : " You chose to pay at the venue — bring the amount on event day, or upload a transfer screenshot below if you prefer to pay now."}
+            </p>
+          </div>
+
+          <div className="mt-6 grid gap-4 text-sm">
+            <div className="grid grid-cols-2 gap-4 rounded-md border border-border bg-secondary/30 p-4">
+              <Detail label="Tier" value={tierName} />
+              <Detail label="Amount" value={formatNGN(reg.amount)} />
+              <Detail label="Seats" value={String(totalSeats)} />
+              <Detail label="Reference" value={reference} />
+            </div>
+
+            <div className="rounded-lg border-2 border-gold bg-gold/5 p-4">
+              <div className="flex items-center justify-between">
+                <p className="font-semibold text-primary">Bank transfer details</p>
+                <button
+                  type="button"
+                  onClick={() => { navigator.clipboard.writeText(bank.account_number); toast.success("Account number copied"); }}
+                  className="inline-flex items-center gap-1 text-xs text-primary hover:underline"
+                >
+                  <Copy className="size-3" /> Copy account
+                </button>
+              </div>
+              <div className="mt-3 grid gap-1">
+                <PendingBankRow label="Bank" value={bank.bank_name} />
+                <PendingBankRow label="Account name" value={bank.account_name} />
+                <PendingBankRow label="Account number" value={bank.account_number} />
+                <PendingBankRow label="Amount" value={formatNGN(reg.amount)} />
+                <PendingBankRow label="Use as reference" value={reference} />
+              </div>
+            </div>
+
+            <label className="block rounded-lg border-2 border-dashed border-primary/40 bg-card hover:bg-secondary/50 transition cursor-pointer p-5 text-center">
+              <Upload className="size-6 mx-auto text-primary" />
+              <p className="mt-2 font-semibold text-primary">
+                {uploading
+                  ? "Uploading…"
+                  : proofPath
+                    ? "Replace payment screenshot"
+                    : "Upload payment screenshot"}
+              </p>
+              <p className="mt-1 text-xs text-muted-foreground">PNG or JPG, up to 5 MB</p>
+              <input type="file" accept="image/*" className="hidden" onChange={handleFile} disabled={uploading} />
+            </label>
+
+            {proofPath && (
+              <div className="rounded-md border border-primary/30 bg-secondary/40 p-3 text-xs text-muted-foreground flex items-center gap-2">
+                <Check className="size-4 text-primary" /> Payment proof on file — awaiting secretariat approval.
+              </div>
+            )}
+          </div>
+
+          <div className="mt-6 flex flex-wrap justify-center gap-3">
+            <Button variant="outline" onClick={onBack}>Look up another</Button>
+            <Button asChild><Link to="/">Return home</Link></Button>
+          </div>
+        </Card>
       </div>
+    </div>
+  );
+}
+
+function PendingBankRow({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="flex items-center justify-between gap-3 py-1.5 border-b border-border/60 last:border-0 text-sm">
+      <span className="text-muted-foreground">{label}</span>
+      <span className="font-medium text-foreground text-right break-all">{value}</span>
     </div>
   );
 }

@@ -1530,11 +1530,18 @@ type GoodwillMessage = Database["public"]["Tables"]["goodwill_messages"]["Row"];
 type GoodwillStatusFilter = "all" | "pending" | "approved" | "rejected";
 
 const GOODWILL_BUCKET = "goodwill-photos";
+const GOODWILL_DOC_BUCKET = "goodwill-documents";
 
 function goodwillPhotoUrl(pathOrUrl: string | null): string | null {
   if (!pathOrUrl) return null;
   if (/^https?:\/\//i.test(pathOrUrl)) return pathOrUrl;
   return supabase.storage.from(GOODWILL_BUCKET).getPublicUrl(pathOrUrl).data.publicUrl;
+}
+
+function goodwillDocUrl(pathOrUrl: string | null): string | null {
+  if (!pathOrUrl) return null;
+  if (/^https?:\/\//i.test(pathOrUrl)) return pathOrUrl;
+  return supabase.storage.from(GOODWILL_DOC_BUCKET).getPublicUrl(pathOrUrl).data.publicUrl;
 }
 
 function GoodwillPanel() {

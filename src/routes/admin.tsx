@@ -219,6 +219,7 @@ function RegistrationsPanel() {
     const { error } = await supabase.from("registrations").update({ payment_status: status }).eq("id", id);
     if (error) return toast.error(error.message);
     setRows((r) => r.map((x) => (x.id === id ? { ...x, payment_status: status } : x)));
+    await logAudit(`registration.status.${status}`, "registrations", id, { status });
     toast.success("Updated");
   }
 
@@ -273,6 +274,7 @@ function RegistrationsPanel() {
     const { error } = await supabase.from("registrations").delete().eq("id", id);
     if (error) return toast.error(error.message);
     setRows((r) => r.filter((x) => x.id !== id));
+    await logAudit("registration.delete", "registrations", id, {});
     toast.success("Deleted");
   }
 
@@ -1109,6 +1111,7 @@ function RafflePanel() {
     const { error } = await supabase.from("raffle_sales").update({ payment_status: status }).eq("id", id);
     if (error) return toast.error(error.message);
     setRows((r) => r.map((x) => (x.id === id ? { ...x, payment_status: status } : x)));
+    await logAudit(`raffle.status.${status}`, "raffle_sales", id, { status });
   }
 
   async function remove(id: string) {
@@ -1116,6 +1119,7 @@ function RafflePanel() {
     const { error } = await supabase.from("raffle_sales").delete().eq("id", id);
     if (error) return toast.error(error.message);
     setRows((r) => r.filter((x) => x.id !== id));
+    await logAudit("raffle.delete", "raffle_sales", id, {});
   }
 
   const totals = useMemo(() => {
@@ -2058,7 +2062,7 @@ function AuditLogsPanel() {
   const load = async () => {
     setLoading(true);
     const { data, error } = await supabase
-      .from("audit_logs" as never)
+      .from("audit_logs")
       .select("*")
       .order("created_at", { ascending: false })
       .limit(1000);
